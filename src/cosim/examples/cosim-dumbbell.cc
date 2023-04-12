@@ -61,12 +61,16 @@ main (int argc, char *argv[])
 
   Time linkLatency(MilliSeconds (10));
   DataRate linkRate("10Mb/s");
+  std::string queueSize("40MB");
   double ecnTh = 200000;
+  bool useREDQueue = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("LinkLatency", "Propagation delay through link", linkLatency);
   cmd.AddValue ("LinkRate", "Link bandwidth", linkRate);
+  cmd.AddValue ("QueueSize", "Size of the drop tail queue", queueSize);
   cmd.AddValue ("EcnTh", "ECN Threshold queue size", ecnTh);
+  cmd.AddValue ("UseREDQueue", "use a RED queue instead of a drop tail queue", useREDQueue);
   cmd.AddValue ("CosimPortLeft", "Add a cosim ethernet port to the bridge",
       MakeCallback (&AddCosimLeftPort));
   cmd.AddValue ("CosimPortRight", "Add a cosim ethernet port to the bridge",
@@ -110,8 +114,15 @@ main (int argc, char *argv[])
   Ptr<SimpleChannel> ptpChan = CreateObject<SimpleChannel> ();
 
   SimpleNetDeviceHelper pointToPointSR;
-  pointToPointSR.SetQueue("ns3::DevRedQueue", "MaxSize", StringValue("2666p"));
-  pointToPointSR.SetQueue("ns3::DevRedQueue", "MinTh", DoubleValue (ecnTh));
+  if (useREDQueue)
+  {
+    pointToPointSR.SetQueue("ns3::DevRedQueue", "MaxSize", QueueSizeValue(QueueSize(queueSize)));
+    pointToPointSR.SetQueue("ns3::DevRedQueue", "MinTh", DoubleValue (ecnTh));
+  }
+  else
+  {
+    pointToPointSR.SetQueue("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize(queueSize)));
+  }
   pointToPointSR.SetDeviceAttribute ("DataRate", DataRateValue(linkRate));
   pointToPointSR.SetChannelAttribute ("Delay", TimeValue (linkLatency));
 
