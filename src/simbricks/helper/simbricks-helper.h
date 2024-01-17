@@ -2,8 +2,6 @@
 #ifndef SIMBRICKS_HELPER_H
 #define SIMBRICKS_HELPER_H
 
-#include "ns3/simbricks.h"
-
 namespace ns3 {
 
 /* ... */
