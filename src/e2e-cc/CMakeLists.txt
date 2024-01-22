@@ -35,6 +35,7 @@ build_lib(
     LIBRARIES_TO_LINK ${libcore}
                       ${libsimbricks}
                       ${libapplications}
+                      ${libptp}
     TEST_SOURCES test/e2e-cc-test-suite.cc
                  ${examples_as_tests_sources}
 )
