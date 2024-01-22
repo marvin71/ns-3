@@ -140,7 +140,7 @@ E2ESimpleChannel::E2ESimpleChannel(const E2EConfig& config)
     }
     if (auto opt {config.Find("QueueSize")}; opt)
     {
-        m_channelHelper.SetQueue("ns3::DropTailQueue", "MaxSize",
+        m_channelHelper.SetQueue("ns3::PTPQueue", "MaxSize",
             QueueSizeValue(QueueSize(std::string(*opt))));
     }
     if (auto opt {config.Find("Delay")}; opt)
