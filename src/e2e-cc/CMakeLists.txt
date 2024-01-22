@@ -26,5 +26,5 @@ build_lib(
     LIBRARIES_TO_LINK ${libcore}
                       ${libsimbricks}
                       ${libapplications}
+                      ${libptp}
 )
-
