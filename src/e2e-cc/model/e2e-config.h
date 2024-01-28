@@ -189,7 +189,7 @@ E2EConfig::SetAttrIfContained(Ptr<Object> obj,
         }
         else if constexpr (std::is_same_v<U, double>)
         {
-            uint64_t value {ConvertArgToDouble(std::string(it->second))};
+            double value {ConvertArgToDouble(std::string(it->second))};
             obj->SetAttribute(attributeKey, T(value));
         }
         else if constexpr (std::is_same_v<U, InetSocketAddress>)
@@ -243,7 +243,7 @@ E2EConfig::SetFactoryIfContained(ObjectFactory& factory,
         }
         else if constexpr (std::is_same_v<U, double>)
         {
-            uint64_t value {ConvertArgToDouble(std::string(it->second))};
+            double value {ConvertArgToDouble(std::string(it->second))};
             factory.Set(attributeKey, T(value));
         }
         else if constexpr (std::is_same_v<U, InetSocketAddress>)
