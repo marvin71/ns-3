@@ -1,0 +1,19 @@
+build_lib(
+  LIBNAME homa
+  SOURCE_FILES
+    model/homa-l4-protocol.cc
+    model/homa-socket-factory.cc
+    model/homa-header.cc
+    model/homa-socket.cc
+    model/msg-generator-app.cc
+  HEADER_FILES
+    model/homa-socket-factory.h
+    model/homa-socket.h
+    model/homa-l4-protocol.h
+    model/homa-header.h
+    model/msg-generator-app.h
+  LIBRARIES_TO_LINK
+    ${libcore}
+    ${libpoint-to-point}
+    ${libapplications}
+)
