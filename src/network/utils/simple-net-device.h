@@ -107,6 +107,10 @@ class SimpleNetDevice : public NetDevice
      */
     void SetReceiveErrorModel(Ptr<ErrorModel> em);
 
+    DataRate GetDataRate() {
+      return m_bps;
+    }
+
     // inherited from NetDevice base class.
     void SetIfIndex(const uint32_t index) override;
     uint32_t GetIfIndex() const override;
