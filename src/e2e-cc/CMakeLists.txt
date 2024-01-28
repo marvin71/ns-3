@@ -36,6 +36,8 @@ build_lib(
                       ${libsimbricks}
                       ${libapplications}
                       ${libptp}
+                      ${libpoint-to-point}
+                      ${libhoma}
     TEST_SOURCES test/e2e-cc-test-suite.cc
                  ${examples_as_tests_sources}
 )

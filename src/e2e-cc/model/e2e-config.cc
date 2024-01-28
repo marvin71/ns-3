@@ -107,6 +107,32 @@ E2EConfig::ConvertArgToUInteger(const std::string& arg)
     return value;
 }
 
+double
+E2EConfig::ConvertArgToDouble(const std::string& arg)
+{
+    double value;
+    std::size_t pos{};
+    try
+    {
+        value = std::stod(arg, &pos);
+    }
+    catch (std::invalid_argument const&)
+    {
+        NS_ABORT_MSG("unable to convert input '" << arg << "' into double");
+    }
+    catch (std::out_of_range const&)
+    {
+        NS_ABORT_MSG("input '" << arg << "' out of range");
+    }
+
+    if (pos != arg.size())
+    {
+        NS_LOG_WARN("input '" << arg << "' contains non-numeric characters that were ignored");
+    }
+
+    return value;
+}
+
 void
 E2EConfig::SplitArgs()
 {
