@@ -96,11 +96,11 @@ MsgGeneratorApp::GetTypeId (void)
     .AddAttribute ("MsgSizeCDF",
                    "Map for CDF of message sizes.",
                    //TypeId::ATTR_GET | TypeId::ATTR_SET, // do not set at construction time
-                   AttributeContainerValue<TupleValue<DoubleValue,IntegerValue>, ';'>(),
-                   MakeAttributeContainerAccessor<TupleValue<DoubleValue,IntegerValue>, ';', std::list>(
+                   AttributeContainerValue<TupleValue<DoubleValue,IntegerValue>, '+'>(),
+                   MakeAttributeContainerAccessor<TupleValue<DoubleValue,IntegerValue>, '+', std::list>(
                       &MsgGeneratorApp::SetMsgSizeCDF,
                       &MsgGeneratorApp::GetMsgSizeCDF),
-                   MakeAttributeContainerChecker<TupleValue<DoubleValue,IntegerValue>, ';', std::list>(
+                   MakeAttributeContainerChecker<TupleValue<DoubleValue,IntegerValue>, '+', std::list>(
                       MakeTupleChecker<DoubleValue,IntegerValue>(
                         MakeDoubleChecker<double>(), MakeIntegerChecker<int>())))
   ;
