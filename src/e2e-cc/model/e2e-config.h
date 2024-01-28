@@ -99,6 +99,7 @@ class E2EConfig
 
     static int64_t ConvertArgToInteger(const std::string& arg);
     static uint64_t ConvertArgToUInteger(const std::string& arg);
+    static double ConvertArgToDouble(const std::string &arg);
 
   private:
     std::string m_rawArgs;
@@ -186,6 +187,11 @@ E2EConfig::SetAttrIfContained(Ptr<Object> obj,
             uint64_t value{ConvertArgToUInteger(std::string(attributeValue))};
             obj->SetAttribute(attributeKey, T(value));
         }
+        else if constexpr (std::is_same_v<U, double>)
+        {
+            uint64_t value {ConvertArgToDouble(std::string(it->second))};
+            obj->SetAttribute(attributeKey, T(value));
+        }
         else if constexpr (std::is_same_v<U, InetSocketAddress>)
         {
             std::string_view address{attributeValue};
@@ -233,6 +239,11 @@ E2EConfig::SetFactoryIfContained(ObjectFactory& factory,
         else if constexpr (std::is_same_v<U, unsigned>)
         {
             uint64_t value{ConvertArgToUInteger(std::string(attributeValue))};
+            factory.Set(attributeKey, T(value));
+        }
+        else if constexpr (std::is_same_v<U, double>)
+        {
+            uint64_t value {ConvertArgToDouble(std::string(it->second))};
             factory.Set(attributeKey, T(value));
         }
         else if constexpr (std::is_same_v<U, InetSocketAddress>)

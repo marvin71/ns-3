@@ -27,4 +27,6 @@ build_lib(
                       ${libsimbricks}
                       ${libapplications}
                       ${libptp}
+                      ${libpoint-to-point}
+                      ${libhoma}
 )
