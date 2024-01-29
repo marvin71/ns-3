@@ -5,12 +5,14 @@ build_lib(
     model/homa-socket-factory.cc
     model/homa-header.cc
     model/homa-socket.cc
+    model/homa-pfifo-queue.cc
     model/msg-generator-app.cc
   HEADER_FILES
     model/homa-socket-factory.h
     model/homa-socket.h
     model/homa-l4-protocol.h
     model/homa-header.h
+    model/homa-pfifo-queue.h
     model/msg-generator-app.h
   LIBRARIES_TO_LINK
     ${libcore}

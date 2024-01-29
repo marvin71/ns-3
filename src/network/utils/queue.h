@@ -433,6 +433,7 @@ class Queue : public QueueBase
     Container m_packets;     //!< the items in the queue
     NS_LOG_TEMPLATE_DECLARE; //!< the log component
 
+  protected:
     /// Traced callback: fired when a packet is enqueued
     TracedCallback<Ptr<const Item>> m_traceEnqueue;
     /// Traced callback: fired when a packet is dequeued
