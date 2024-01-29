@@ -112,7 +112,12 @@ E2ESimpleNs3Host::E2ESimpleNs3Host(const E2EConfig& config) : E2EHost(config)
     //config.SetFactoryIfContained<UintegerValue, unsigned>(deviceFactory, "Mtu", "Mtu");
 
     ObjectFactory queueFactory;
-    queueFactory.SetTypeId("ns3::DropTailQueue<Packet>");
+    std::string qtype = "ns3::PTPQueue";
+    if (auto qt {m_config.Find("QueueType")}; qt)
+    {
+        qtype= *qt;
+    }
+    queueFactory.SetTypeId(qtype + "<Packet>");
     config.SetFactoryIfContained<QueueSizeValue, QueueSize>(queueFactory, "QueueSize", "MaxSize");
 
     ObjectFactory channelFactory;

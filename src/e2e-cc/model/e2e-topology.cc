@@ -138,9 +138,14 @@ E2ESimpleChannel::E2ESimpleChannel(const E2EConfig& config)
     {
         m_channelHelper.SetDeviceAttribute("DataRate", DataRateValue(DataRate(std::string(*opt))));
     }
+    std::string qtype = "ns3::PTPQueue";
+    if (auto opt {config.Find("QueueType")}; opt)
+    {
+        qtype = std::string(*opt);
+    }
     if (auto opt {config.Find("QueueSize")}; opt)
     {
-        m_channelHelper.SetQueue("ns3::PTPQueue", "MaxSize",
+        m_channelHelper.SetQueue(qtype, "MaxSize",
             QueueSizeValue(QueueSize(std::string(*opt))));
     }
     if (auto opt {config.Find("Delay")}; opt)
