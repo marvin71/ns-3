@@ -498,6 +498,9 @@ class Ipv4L3Protocol : public Ipv4
 
     SocketList m_sockets; //!< List of IPv4 raw sockets.
 
+    /// Determines the value of Don't Fragment flags
+    bool m_mayFragment;
+
     /// Key identifying a fragmented packet
     typedef std::pair<uint64_t, uint32_t> FragmentKey_t;
 
