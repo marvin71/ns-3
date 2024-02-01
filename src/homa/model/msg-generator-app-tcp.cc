@@ -275,7 +275,7 @@ void MsgGeneratorAppTCP::StartApplication ()
 
   m_remoteClient = CreateObject<UniformRandomVariable> ();
   m_remoteClient->SetAttribute ("Min", DoubleValue (0));
-  m_remoteClient->SetAttribute ("Max", DoubleValue (m_remoteClients.size()));
+  m_remoteClient->SetAttribute ("Max", DoubleValue (m_remoteClients.size() - 1));
 
   // randomly choose [m_numToConnect] number of clients from remoteClients to connect
   int i;
@@ -385,7 +385,7 @@ void MsgGeneratorAppTCP::SendMessage ()
   NS_LOG_LOGIC ("MsgGeneratorAppTCP {" << this << ") generates a message of size: "
                 << msgSizeBytes << " Bytes.");
 
-  int sentBytes = m_socket_c[m_to_connect_idx[remoteClientIdx]]->Send(msg);
+  int sentBytes = m_socket_c[remoteClientIdx]->Send(msg);
 
   if (sentBytes > 0)
   {
