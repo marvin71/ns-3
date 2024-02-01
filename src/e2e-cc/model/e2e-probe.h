@@ -76,7 +76,7 @@ class E2EPeriodicSampleProbe : public E2EProbe
     void WriteLine();
     void SetWriter(void writer(std::ostream&, T));
 
-    T m_value;
+    T m_value{};
 
   private:
     std::ostream* m_output;

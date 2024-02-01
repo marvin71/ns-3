@@ -31,6 +31,8 @@
 #include "ns3/socket-factory.h"
 #include "ns3/packet.h"
 #include "ns3/event-id.h"
+#include "ns3/traced-callback.h"
+
 
 namespace ns3 {
     
@@ -123,6 +125,11 @@ private:
   uint32_t          m_maxPayloadSize;//!< Maximum size of packet payloads
   uint16_t          m_totMsgCnt;     //!< Total number of messages sent so far
   uint16_t          m_maxMsgs;       //!< Maximum number of messages allowed to be sent
+
+    /// Traced Callback: sent packets
+  TracedCallback<Ptr<const Packet>> m_txTrace;
+    /// Traced Callback: received packets, source address.
+  TracedCallback<Ptr<const Packet>, const Address&> m_rxTrace;
 
   double m_avgMsgSizePkts;
   double m_load;

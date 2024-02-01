@@ -27,6 +27,7 @@
 #include "e2e-component.h"
 #include "e2e-config.h"
 
+#include "ns3/homa-module.h"
 #include "ns3/applications-module.h"
 
 namespace ns3
@@ -219,6 +220,30 @@ E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config)
     m_application = m_factory.Create<Application>();
 }
 
+void
+E2EMsgGenerator::AddProbe(const E2EConfig& config)
+{
+    Ptr<MsgGeneratorApp> sink = StaticCast<MsgGeneratorApp>(m_application);
+
+    std::string_view type;
+    if (auto t {config.Find("Type")}; t)
+    {
+        type = *t;
+    }
+    else
+    {
+        NS_ABORT_MSG("Probe does not have a type");
+    }
+
+    if (type == "Rx")
+    {
+        Ptr<E2EPeriodicSampleProbe<uint32_t>> probe
+            = Create<E2EPeriodicSampleProbe<uint32_t>>(config);
+        sink->TraceConnectWithoutContext("Rx", MakeBoundCallback(TraceRx,
+            E2EPeriodicSampleProbe<uint32_t>::AddValue, probe));
+    }
+}
+
 E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config)
     : E2EApplication(config, "ns3::MsgGeneratorAppTCP")
 {
@@ -239,5 +264,29 @@ E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config)
     m_application = m_factory.Create<Application>();
 }
 
+
+void
+E2EMsgGeneratorTCP::AddProbe(const E2EConfig& config)
+{
+    Ptr<MsgGeneratorAppTCP> sink = StaticCast<MsgGeneratorAppTCP>(m_application);
+
+    std::string_view type;
+    if (auto t {config.Find("Type")}; t)
+    {
+        type = *t;
+    }
+    else
+    {
+        NS_ABORT_MSG("Probe does not have a type");
+    }
+
+    if (type == "Rx")
+    {
+        Ptr<E2EPeriodicSampleProbe<uint32_t>> probe
+            = Create<E2EPeriodicSampleProbe<uint32_t>>(config);
+        sink->TraceConnectWithoutContext("Rx", MakeBoundCallback(TraceRx,
+            E2EPeriodicSampleProbe<uint32_t>::AddValue, probe));
+    }
+}
 
 } // namespace ns3

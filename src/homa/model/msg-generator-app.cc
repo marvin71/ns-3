@@ -36,6 +36,8 @@
 #include "ns3/homa-socket-factory.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/simple-net-device.h"
+#include "ns3/trace-source-accessor.h"
+
 
 #include <algorithm>
 #include <sstream>
@@ -103,6 +105,15 @@ MsgGeneratorApp::GetTypeId (void)
                    MakeAttributeContainerChecker<TupleValue<DoubleValue,IntegerValue>, '+', std::list>(
                       MakeTupleChecker<DoubleValue,IntegerValue>(
                         MakeDoubleChecker<double>(), MakeIntegerChecker<int>())))
+    .AddTraceSource("Tx",
+                    "A new packet is sent",
+                    MakeTraceSourceAccessor(&MsgGeneratorApp::m_txTrace),
+                    "ns3::Packet::TracedCallback")
+    .AddTraceSource("Rx",
+                    "A packet has been received",
+                    MakeTraceSourceAccessor(&MsgGeneratorApp::m_rxTrace),
+                    "ns3::Packet::AddressTracedCallback")                    
+  ;
   ;
   return tid;
 }
@@ -328,6 +339,7 @@ void MsgGeneratorApp::SendMessage ()
 
   if (sentBytes > 0)
   {
+    m_txTrace(msg);
     NS_LOG_INFO(sentBytes << " Bytes sent to " << receiverAddr);
     m_totMsgCnt++;
   }
@@ -346,6 +358,7 @@ void MsgGeneratorApp::ReceiveMessage (Ptr<Socket> socket)
   Address from;
   while ((message = socket->RecvFrom (from)))
   {
+    m_rxTrace(message, from);
     NS_LOG_INFO (Simulator::Now ().GetNanoSeconds () <<
                  " client received " << message->GetSize () << " bytes from " <<
                  InetSocketAddress::ConvertFrom (from).GetIpv4 () << ":" <<
