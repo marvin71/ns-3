@@ -76,6 +76,7 @@ class E2EMsgGenerator : public E2EApplication
 {
   public:
     E2EMsgGenerator(const E2EConfig& config);
+    void AddProbe(const E2EConfig& config) override;
 
 };
 
@@ -83,6 +84,7 @@ class E2EMsgGeneratorTCP : public E2EApplication
 {
   public:
     E2EMsgGeneratorTCP(const E2EConfig& config);
+    void AddProbe(const E2EConfig& config) override;
 
 };
 
