@@ -74,6 +74,12 @@ class E2EMsgGenerator : public E2EApplication
 
 };
 
+class E2EMsgGeneratorTCP : public E2EApplication
+{
+  public:
+    E2EMsgGeneratorTCP(const E2EConfig& config);
+
+};
 
 class E2EOnOffApp : public E2EApplication
 {

@@ -70,6 +70,10 @@ E2EApplication::CreateApplication(const E2EConfig& config)
     {
         return Create<E2EMsgGenerator>(config);
     }
+    else if (type == "MsgGeneratorTCP")
+    {
+        return Create<E2EMsgGeneratorTCP>(config);
+    }
     else
     {
         NS_ABORT_MSG("Unkown application type '" << type << "'");
@@ -207,6 +211,26 @@ E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config)
         "MsgSizeCDF", "MsgSizeCDF"))
     {
         NS_ABORT_MSG("MsgGenerator application '" << GetId() << "' requires MsgSizeCDF.");
+    }
+    config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "Port", "Port");
+    config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "MaxMsg", "MaxMsg");
+    config.SetFactoryIfContained<DoubleValue, double>(m_factory, "Load", "Load");
+    config.SetFactoryIfContained<DoubleValue, double>(m_factory, "AvgMsgSizePkts", "AvgMsgSizePkts");
+    m_application = m_factory.Create<Application>();
+}
+
+E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config)
+    : E2EApplication(config, "ns3::MsgGeneratorAppTCP")
+{
+    if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+        "RemoteClients", "RemoteClients"))
+    {
+        NS_ABORT_MSG("MsgGeneratorTCP application '" << GetId() << "' requires RemoteClients.");
+    }
+    if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+        "MsgSizeCDF", "MsgSizeCDF"))
+    {
+        NS_ABORT_MSG("MsgGeneratorTCP application '" << GetId() << "' requires MsgSizeCDF.");
     }
     config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "Port", "Port");
     config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "MaxMsg", "MaxMsg");

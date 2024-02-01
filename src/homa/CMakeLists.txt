@@ -7,6 +7,7 @@ build_lib(
     model/homa-socket.cc
     model/homa-pfifo-queue.cc
     model/msg-generator-app.cc
+    model/msg-generator-app-tcp.cc
   HEADER_FILES
     model/homa-socket-factory.h
     model/homa-socket.h
@@ -14,6 +15,7 @@ build_lib(
     model/homa-header.h
     model/homa-pfifo-queue.h
     model/msg-generator-app.h
+    model/msg-generator-app-tcp.h
   LIBRARIES_TO_LINK
     ${libcore}
     ${libpoint-to-point}
