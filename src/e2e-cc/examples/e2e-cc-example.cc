@@ -58,6 +58,7 @@ main(int argc, char* argv[])
     LogComponentEnable("E2ETopology", LOG_LEVEL_WARN);
     LogComponentEnable("E2EHost", LOG_LEVEL_WARN);
     LogComponentEnable("E2EApplication", LOG_LEVEL_WARN);
+    LogComponentEnable ("MsgGeneratorAppTCP", LOG_LEVEL_DEBUG);  
 
     Time::SetResolution(Time::Unit::PS);
 
