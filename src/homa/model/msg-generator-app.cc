@@ -87,7 +87,7 @@ MsgGeneratorApp::GetTypeId (void)
                 MakeAttributeContainerChecker<StringValue, ',', std::list>(MakeStringChecker()))
     .AddAttribute ("Load",
                    "Link load",
-                   DoubleValue (0.5),
+                   DoubleValue (0.8),
                    MakeDoubleAccessor (&MsgGeneratorApp::m_load),
                    MakeDoubleChecker<double>())
     .AddAttribute ("AvgMsgSizePkts",
@@ -219,6 +219,7 @@ void MsgGeneratorApp::StartApplication ()
   } else {
     NS_ABORT_MSG ("Unsupported net device");
   }
+  NS_LOG_DEBUG("txRate: " << txRate);
 
   double avgPktLoadBytes = (double)(mtu + 64); // Account for the ctrl pkts each data pkt induce
   double avgInterMsgTime = (m_avgMsgSizePkts * avgPktLoadBytes * 8.0 ) / (((double)txRate) * m_load);

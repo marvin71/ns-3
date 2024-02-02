@@ -92,7 +92,7 @@ MsgGeneratorAppTCP::GetTypeId (void)
                 MakeAttributeContainerChecker<StringValue, ',', std::list>(MakeStringChecker()))
     .AddAttribute ("Load",
                    "Link load",
-                   DoubleValue (0.5),
+                   DoubleValue (0.8),
                    MakeDoubleAccessor (&MsgGeneratorAppTCP::m_load),
                    MakeDoubleChecker<double>())
     .AddAttribute ("AvgMsgSizePkts",
@@ -224,6 +224,8 @@ void MsgGeneratorAppTCP::StartApplication ()
     NS_ABORT_MSG ("Unsupported net device");
   }
 
+  NS_LOG_DEBUG("txRate: " << txRate);
+
   double avgPktLoadBytes = (double)(mtu + 64); // Account for the ctrl pkts each data pkt induce
   double avgInterMsgTime = (m_avgMsgSizePkts * avgPktLoadBytes * 8.0 ) / (((double)txRate) * m_load);
 
@@ -252,14 +254,6 @@ void MsgGeneratorAppTCP::StartApplication ()
                               MakeCallback(&MsgGeneratorAppTCP::HandlePeerError, this));
 
 
-  while(m_socket_c.size() < m_numToConnect){
-
-    Ptr<Socket> socket_c;
-    socket_c = Socket::CreateSocket (node, m_tid);
-    m_socket_c.push_back(socket_c);
-    socket_c->Bind (InetSocketAddress(m_localIp));
-    socket_c->SetRecvCallback (MakeCallback (&MsgGeneratorAppTCP::ReceiveMessage, this));
-  }
 
   m_remoteClients.erase(
     std::remove_if(
@@ -273,33 +267,40 @@ void MsgGeneratorAppTCP::StartApplication ()
   );
   NS_ABORT_MSG_IF(m_remoteClients.empty(), "No remote clients");
 
+  while(m_socket_c.size() < m_remoteClients.size()){
+
+    Ptr<Socket> socket_c;
+    socket_c = Socket::CreateSocket (node, m_tid);
+    m_socket_c.push_back(socket_c);
+    socket_c->Bind (InetSocketAddress(m_localIp));
+    socket_c->SetRecvCallback (MakeCallback (&MsgGeneratorAppTCP::ReceiveMessage, this));
+  }
+
   m_remoteClient = CreateObject<UniformRandomVariable> ();
   m_remoteClient->SetAttribute ("Min", DoubleValue (0));
-  m_remoteClient->SetAttribute ("Max", DoubleValue (m_remoteClients.size() - 1));
+  m_remoteClient->SetAttribute ("Max", DoubleValue (m_remoteClients.size()));
 
   // randomly choose [m_numToConnect] number of clients from remoteClients to connect
   int i;
-  NS_LOG_DEBUG("m_numToConnect: " << m_numToConnect);
+  // NS_LOG_DEBUG("m_numToConnect: " << m_numToConnect);
 
-  while (m_to_connect_idx.size() < m_numToConnect){
-    i = m_remoteClient->GetValue();
-    i =  (int) std::floor(i);
-    if (std::find(m_to_connect_idx.begin(), m_to_connect_idx.end(), i) != m_to_connect_idx.end()){
-      // if index already exists in the list
-      continue;
-    }
-    else{
-      m_to_connect_idx.push_back(i);
-      NS_LOG_DEBUG("push " << i << "to_connect_idx: " << m_to_connect_idx.size());
-    } 
-  }
+  // while (m_to_connect_idx.size() < m_numToConnect){
+  //   i = m_remoteClient->GetValue();
+  //   i =  (int) std::floor(i);
+  //   if (std::find(m_to_connect_idx.begin(), m_to_connect_idx.end(), i) != m_to_connect_idx.end()){
+  //     // if index already exists in the list
+  //     continue;
+  //   }
+  //   else{
+  //     m_to_connect_idx.push_back(i);
+  //     NS_LOG_DEBUG("push " << i << "to_connect_idx: " << m_to_connect_idx.size());
+  //   } 
+  // }
   /**************************/
   m_socket->Listen();
   // Connect to the chosen clients
-  int remote_idx;
-  for (i = 0; i < m_numToConnect; i++){
-    remote_idx = m_to_connect_idx[i];
-    Address receiverAddr = m_remoteClients[remote_idx];
+  for (i = 0; i < m_remoteClients.size(); i++){
+    Address receiverAddr = m_remoteClients[i];
     m_socket_c[i]->Connect(receiverAddr);
 
   }
@@ -374,8 +375,8 @@ void MsgGeneratorAppTCP::SendMessage ()
 
   /* Decide which remote client to send to */
   double rndValue = m_remoteClient->GetValue ();
-  int remoteClientIdx = (int) std::floor(rndValue) % m_numToConnect;
-  Address receiverAddr = m_remoteClients[ m_to_connect_idx[remoteClientIdx]];
+  int remoteClientIdx = (int) std::floor(rndValue);
+  Address receiverAddr = m_remoteClients[remoteClientIdx];
 
   /* Decide on the message size to send */
   uint32_t msgSizeBytes = GetNextMsgSizeFromDist ();
