@@ -53,7 +53,8 @@ E2EApplication::CreateApplication(const E2EConfig& config)
 {
     auto type_opt {config.Find("Type")};
     NS_ABORT_MSG_UNLESS(type_opt.has_value(), "Application has no type");
-    std::string_view type {*type_opt};
+    std::string_view type {(*type_opt).value};
+    (*type_opt).processed = true;
 
     if (type == "PacketSink")
     {
@@ -109,7 +110,8 @@ E2EPacketSink::AddProbe(const E2EConfig& config)
     std::string_view type;
     if (auto t {config.Find("Type")}; t)
     {
-        type = *t;
+        type = (*t).value;
+        (*t).processed = true;
     }
     else
     {
@@ -151,7 +153,8 @@ E2EBulkSender::AddProbe(const E2EConfig& config)
     std::string_view type;
     if (auto t {config.Find("Type")}; t)
     {
-        type = *t;
+        type = (*t).value;
+        (*t).processed = true;
     }
     else
     {
