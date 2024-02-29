@@ -238,13 +238,12 @@ E2EOnOffApp::E2EOnOffApp(const E2EConfig& config)
     config.SetFactoryIfContained<StringValue, std::string>(m_factory, "OnTime", "OnTime");
     config.SetFactoryIfContained<StringValue, std::string>(m_factory, "OffTime", "OffTime");
     config.SetFactory(m_factory);
-
     m_application = m_factory.Create<Application>();
 }
 
-E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config)
-    : E2EApplication(config, "ns3::MsgGeneratorApp")
+E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config) : E2EApplication(config)
 {
+    m_factory.SetTypeId("ns3::MsgGeneratorApp");
     if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
         "RemoteClients", "RemoteClients"))
     {
@@ -259,6 +258,8 @@ E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config)
     config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "MaxMsg", "MaxMsg");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "Load", "Load");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "AvgMsgSizePkts", "AvgMsgSizePkts");
+    config.SetFactory(m_factory);
+
     m_application = m_factory.Create<Application>();
 }
 
@@ -270,7 +271,7 @@ E2EMsgGenerator::AddProbe(const E2EConfig& config)
     std::string_view type;
     if (auto t {config.Find("Type")}; t)
     {
-        type = *t;
+        type = t->value;
     }
     else
     {
@@ -286,9 +287,9 @@ E2EMsgGenerator::AddProbe(const E2EConfig& config)
     }
 }
 
-E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config)
-    : E2EApplication(config, "ns3::MsgGeneratorAppTCP")
+E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config) : E2EApplication(config)
 {
+    m_factory.SetTypeId("ns3::MsgGeneratorAppTCP");
     if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
         "RemoteClients", "RemoteClients"))
     {
@@ -303,6 +304,8 @@ E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config)
     config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "MaxMsg", "MaxMsg");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "Load", "Load");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "AvgMsgSizePkts", "AvgMsgSizePkts");
+    config.SetFactory(m_factory);
+
     m_application = m_factory.Create<Application>();
 }
 
@@ -315,7 +318,7 @@ E2EMsgGeneratorTCP::AddProbe(const E2EConfig& config)
     std::string_view type;
     if (auto t {config.Find("Type")}; t)
     {
-        type = *t;
+        type = t->value;
     }
     else
     {
