@@ -27,10 +27,11 @@
 
 #include "ns3/bulk-send-application.h"
 #include "ns3/data-rate.h"
+#include "ns3/double.h"
+#include "ns3/msg-generator-app.h"
+#include "ns3/msg-generator-app-tcp.h"
 #include "ns3/packet-sink.h"
 #include "ns3/uinteger.h"
-#include "ns3/homa-module.h"
-#include "ns3/applications-module.h"
 
 namespace ns3
 {
