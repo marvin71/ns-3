@@ -68,6 +68,8 @@ public:
   std::vector<std::tuple<double,int>> GetMsgSizeCDF() const;
   void SetMsgSizeCDF(std::vector<std::tuple<double,int>> cdf);
 
+  void ReadMsgSizeDist();
+
   /*void SetWorkload (double load, 
                     std::map<double,int> msgSizeCDF, 
                     double avgMsgSizePkts);*/
@@ -115,8 +117,10 @@ private:
   
   Ipv4Address     m_localIp;         //!< Local IP address to bind 
   uint16_t        m_localPort;       //!< Local port number to bind
+  Address         m_localAddress;    //!< Local address to bind
   std::vector<InetSocketAddress> m_remoteClients; //!< List of clients that this app can send to
   std::map<double,int> m_msgSizeCDF; //!< The CDF of msg sizes {cum. prob. -> msg size in pkts}
+  std::string     m_msgSizeDistFileName; //!< The file to read message size distribution from
   
   Ptr<ExponentialRandomVariable>  m_interMsgTime; //!< rng for rate of message generation in sec/msg
   Ptr<UniformRandomVariable>      m_msgSizePkts;  //!< rng to choose msg size from the set workload

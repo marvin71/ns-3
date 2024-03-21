@@ -118,21 +118,58 @@ E2ESimpleNs3Host::E2ESimpleNs3Host(const E2EConfig& config) : E2EHost(config)
         config.SetFactory(deviceFactory, it->second);
     }
 
-    ObjectFactory queueFactory;
+    ObjectFactory outerQueueFactory;
+    ObjectFactory innerQueueFactory;
+    std::string baseQueueType {"ns3::DropTailQueue<Packet>"};
     if (auto opt {config.Find("QueueType")}; opt)
     {
-        std::string queueType {opt->value};
-        QueueBase::AppendItemTypeIfNotPresent(queueType, "Packet");
-        queueFactory.SetTypeId(queueType);
+        baseQueueType = opt->value;
+        QueueBase::AppendItemTypeIfNotPresent(baseQueueType, "Packet");
+        opt->processed = true;
+    }
+
+    if (auto opt {config.Find("OuterQueueType")}; opt)
+    {
+        std::string outerQueueType {opt->value};
+        QueueBase::AppendItemTypeIfNotPresent(outerQueueType, "Packet");
+        outerQueueFactory.SetTypeId(outerQueueType);
         opt->processed = true;
     }
     else
     {
-        queueFactory.SetTypeId("ns3::DropTailQueue<Packet>");
+        outerQueueFactory.SetTypeId(baseQueueType);
     }
-    if (auto it {categories.find("Queue")}; it != categories.end())
+
+    if (auto opt {config.Find("InnerQueueType")}; opt)
     {
-        config.SetFactory(queueFactory, it->second);
+        std::string innerQueueType {opt->value};
+        QueueBase::AppendItemTypeIfNotPresent(innerQueueType, "Packet");
+        innerQueueFactory.SetTypeId(innerQueueType);
+        opt->processed = true;
+    }
+    else
+    {
+        innerQueueFactory.SetTypeId(baseQueueType);
+    }
+
+    auto baseQueueIt {categories.find("Queue")};
+
+    if (auto it {categories.find("InnerQueue")}; it != categories.end())
+    {
+        config.SetFactory(innerQueueFactory, it->second);
+    }
+    else if (baseQueueIt != categories.end())
+    {
+        config.SetFactory(innerQueueFactory, baseQueueIt->second);
+    }
+
+    if (auto it {categories.find("OuterQueue")}; it != categories.end())
+    {
+        config.SetFactory(outerQueueFactory, it->second);
+    }
+    else if (baseQueueIt != categories.end())
+    {
+        config.SetFactory(outerQueueFactory, baseQueueIt->second);
     }
 
     ObjectFactory channelFactory;
@@ -164,9 +201,9 @@ E2ESimpleNs3Host::E2ESimpleNs3Host(const E2EConfig& config) : E2EHost(config)
     m_channel = channelFactory.Create<SimpleChannel>();
     netDevice->SetChannel(m_channel);
     m_outerNetDevice->SetChannel(m_channel);
-    Ptr<Queue<Packet>> innerQueue = queueFactory.Create<Queue<Packet>>();
+    Ptr<Queue<Packet>> innerQueue = innerQueueFactory.Create<Queue<Packet>>();
     netDevice->SetQueue(innerQueue);
-    Ptr<Queue<Packet>> outerQueue = queueFactory.Create<Queue<Packet>>();
+    Ptr<Queue<Packet>> outerQueue = outerQueueFactory.Create<Queue<Packet>>();
     m_outerNetDevice->SetQueue(outerQueue);
     
     if (m_enableFlowControl)

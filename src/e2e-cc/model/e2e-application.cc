@@ -230,12 +230,13 @@ E2EMsgGenerator::E2EMsgGenerator(const E2EConfig& config) : E2EApplication(confi
     {
         NS_ABORT_MSG("MsgGenerator application '" << GetId() << "' requires RemoteClients.");
     }
-    if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
-        "MsgSizeCDF", "MsgSizeCDF"))
+    if (not (config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+        "MsgSizeCDF", "MsgSizeCDF") or
+        config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+            "MsgSizeDistFileName", "MsgSizeDistFileName")))
     {
         NS_ABORT_MSG("MsgGenerator application '" << GetId() << "' requires MsgSizeCDF.");
     }
-    config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "Port", "Port");
     config.SetFactoryIfContained<UintegerValue, unsigned>(m_factory, "MaxMsg", "MaxMsg");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "Load", "Load");
     config.SetFactoryIfContained<DoubleValue, double>(m_factory, "AvgMsgSizePkts", "AvgMsgSizePkts");
