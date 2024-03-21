@@ -418,12 +418,12 @@ AttributeContainerValue<A, Sep, C>::DeserializeFromString(std::string value,
         return false;
     }
 
-    std::cerr << "DeserializeFromString: start" << std::endl;
+    //std::cerr << "DeserializeFromString: start" << std::endl;
 
     std::istringstream iss(value); // copies value
     while (std::getline(iss, value, m_sep))
     {
-        std::cerr << "DeserializeFromString: '" << value << "'" << std::endl;
+        //std::cerr << "DeserializeFromString: '" << value << "'" << std::endl;
 
         auto avalue = acchecker->GetItemChecker()->CreateValidValue(StringValue(value));
         if (!avalue)
@@ -440,7 +440,7 @@ AttributeContainerValue<A, Sep, C>::DeserializeFromString(std::string value,
         // TODO(jared): make insertion more generic?
         m_container.push_back(attr);
     }
-    std::cerr << "DeserializeFromString: end" << std::endl;
+    //std::cerr << "DeserializeFromString: end" << std::endl;
     return true;
 }
 
