@@ -117,7 +117,6 @@ private:
   
   Ipv4Address     m_localIp;         //!< Local IP address to bind 
   uint16_t        m_localPort;       //!< Local port number to bind
-  Address         m_localAddress;    //!< Local address to bind
   std::vector<InetSocketAddress> m_remoteClients; //!< List of clients that this app can send to
   std::map<double,int> m_msgSizeCDF; //!< The CDF of msg sizes {cum. prob. -> msg size in pkts}
   std::string     m_msgSizeDistFileName; //!< The file to read message size distribution from
