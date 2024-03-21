@@ -208,6 +208,12 @@ SimpleNetDevice::GetTypeId()
                           StringValue("ns3::DropTailQueue<Packet>"),
                           MakePointerAccessor(&SimpleNetDevice::m_queue),
                           MakePointerChecker<Queue<Packet>>())
+            .AddAttribute("Mtu",
+                          "The MAC-level Maximum Transmission Unit",
+                          UintegerValue(1500),
+                          MakeUintegerAccessor(&SimpleNetDevice::SetMtu,
+                                               &SimpleNetDevice::GetMtu),
+                          MakeUintegerChecker<uint16_t>())
             .AddAttribute("DataRate",
                           "The default data rate for point to point links. Zero means infinite",
                           DataRateValue(DataRate("0b/s")),

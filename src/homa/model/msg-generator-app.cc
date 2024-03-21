@@ -67,11 +67,11 @@ MsgGeneratorApp::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&MsgGeneratorApp::m_maxMsgs),
                    MakeUintegerChecker<uint16_t> ())
-    .AddAttribute("Port",
-                  "Port on which we listen for incoming packets.",
-                  UintegerValue(0xffff),
-                  MakeUintegerAccessor(&MsgGeneratorApp::m_localPort),
-                  MakeUintegerChecker<uint16_t>())
+    .AddAttribute("Local",
+                  "The Address on which to Bind the rx socket.",
+                  AddressValue(),
+                  MakeAddressAccessor(&MsgGeneratorApp::m_localAddress),
+                  MakeAddressChecker())
     .AddAttribute ("PayloadSize",
                    "MTU for the network interface excluding the header sizes",
                    UintegerValue (1400),
@@ -105,6 +105,11 @@ MsgGeneratorApp::GetTypeId (void)
                    MakeAttributeContainerChecker<TupleValue<DoubleValue,IntegerValue>, '+', std::list>(
                       MakeTupleChecker<DoubleValue,IntegerValue>(
                         MakeDoubleChecker<double>(), MakeIntegerChecker<int>())))
+    .AddAttribute ("MsgSizeDistFileName",
+                   "File that contains the message size distribution",
+                   StringValue (""),
+                   MakeStringAccessor (&MsgGeneratorApp::m_msgSizeDistFileName),
+                   MakeStringChecker())
     .AddTraceSource("Tx",
                     "A new packet is sent",
                     MakeTraceSourceAccessor(&MsgGeneratorApp::m_txTrace),
@@ -173,6 +178,34 @@ void MsgGeneratorApp::SetMsgSizeCDF(std::vector<std::tuple<double,int>> cdf)
     m_msgSizeCDF[std::get<0>(e)] = std::get<1>(e);
 }
 
+void MsgGeneratorApp::ReadMsgSizeDist()
+{
+  NS_ABORT_MSG_UNLESS(m_msgSizeCDF.empty(), "Message size CDF already contains data");
+  std::ifstream msgSizeDistFile;
+  msgSizeDistFile.open(m_msgSizeDistFileName);
+  NS_LOG_FUNCTION("Reading Msg Size Distribution From: " << m_msgSizeDistFileName);
+
+  std::string line;
+  std::istringstream lineBuffer;
+
+  getline(msgSizeDistFile, line);
+  lineBuffer.str(line);
+  lineBuffer >> m_avgMsgSizePkts;
+
+  double prob;
+  int msgSizePkts;
+  while (getline(msgSizeDistFile, line))
+  {
+    lineBuffer.clear();
+    lineBuffer.str(line);
+    lineBuffer >> msgSizePkts;
+    lineBuffer >> prob;
+
+    m_msgSizeCDF[prob] = msgSizePkts;
+  }
+  msgSizeDistFile.close();
+}
+
 void MsgGeneratorApp::Start (Time start)
 {
   NS_LOG_FUNCTION (this);
@@ -203,6 +236,11 @@ void MsgGeneratorApp::StartApplication ()
 
   Ptr<Node> node = GetNode();
 
+  if (not m_msgSizeDistFileName.empty())
+  {
+    ReadMsgSizeDist();
+  }
+
   NS_ABORT_MSG_IF(m_msgSizeCDF.empty(), "No message size CDF Set");
 
   ///
@@ -232,6 +270,18 @@ void MsgGeneratorApp::StartApplication ()
   m_msgSizePkts->SetAttribute ("Max", DoubleValue (1));
 
   //////////////////
+
+  if (InetSocketAddress::IsMatchingType(m_localAddress))
+  {
+    auto address = InetSocketAddress::ConvertFrom(m_localAddress);
+    m_localIp = address.GetIpv4();
+    m_localPort = address.GetPort();
+  }
+  else
+  {
+    m_localIp = 0;
+    m_localPort = 0;
+  }
 
   Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
   m_localIp = ipv4->GetAddress (1,0).GetLocal();
