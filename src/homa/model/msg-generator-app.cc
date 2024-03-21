@@ -67,11 +67,11 @@ MsgGeneratorApp::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&MsgGeneratorApp::m_maxMsgs),
                    MakeUintegerChecker<uint16_t> ())
-    .AddAttribute("Local",
-                  "The Address on which to Bind the rx socket.",
-                  AddressValue(),
-                  MakeAddressAccessor(&MsgGeneratorApp::m_localAddress),
-                  MakeAddressChecker())
+    .AddAttribute("Port",
+                  "Port on which we listen for incoming packets.",
+                  UintegerValue(0xffff),
+                  MakeUintegerAccessor(&MsgGeneratorApp::m_localPort),
+                  MakeUintegerChecker<uint16_t>())
     .AddAttribute ("PayloadSize",
                    "MTU for the network interface excluding the header sizes",
                    UintegerValue (1400),
@@ -270,18 +270,6 @@ void MsgGeneratorApp::StartApplication ()
   m_msgSizePkts->SetAttribute ("Max", DoubleValue (1));
 
   //////////////////
-
-  if (InetSocketAddress::IsMatchingType(m_localAddress))
-  {
-    auto address = InetSocketAddress::ConvertFrom(m_localAddress);
-    m_localIp = address.GetIpv4();
-    m_localPort = address.GetPort();
-  }
-  else
-  {
-    m_localIp = 0;
-    m_localPort = 0;
-  }
 
   Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
   m_localIp = ipv4->GetAddress (1,0).GetLocal();
