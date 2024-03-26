@@ -31,6 +31,7 @@
 #include "ns3/application.h"
 #include "ns3/simulator.h"
 #include "ns3/socket.h"
+#include "ns3/output-stream-wrapper.h"
 
 #include <fstream>
 
@@ -195,6 +196,37 @@ void ConnectTraceToSocket(Ptr<T> application,
     Ptr<Socket> socket = application->GetSocket();
     NS_ABORT_MSG_UNLESS(socket, "No socket found for application");
     socket->TraceConnectWithoutContext(trace, MakeBoundCallback(TraceOldNewValue<U>, func, probe));
+}
+
+void TraceHomaMsgBegin (Ptr<OutputStreamWrapper> stream,
+                        Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
+                        uint16_t sport, uint16_t dport, int txMsgId);
+
+void TraceHomaMsgFinish (Ptr<OutputStreamWrapper> stream,
+                         Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
+                         uint16_t sport, uint16_t dport, int txMsgId);
+
+class E2ETracer : public E2EProbe
+{
+  public:
+    E2ETracer(const E2EConfig& config);
+
+    template<typename R, typename... UArgs>
+    void AddTraceFunctionConfigPath(const std::string& configPath,
+                                    Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb);
+
+    void Install(Ptr<Application> application) override {}
+
+  private:
+    Ptr<OutputStreamWrapper> m_stream;
+};
+
+template <typename R, typename... UArgs>
+inline void
+E2ETracer::AddTraceFunctionConfigPath(const std::string& configPath,
+                                      Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb)
+{
+    Config::ConnectWithoutContext(configPath, Callback(cb, m_stream));
 }
 
 } // namespace ns3

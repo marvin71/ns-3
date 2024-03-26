@@ -267,6 +267,14 @@ E2EMsgGenerator::AddProbe(const E2EConfig& config)
         sink->TraceConnectWithoutContext("Rx", MakeBoundCallback(TraceRx,
             E2EPeriodicSampleProbe<uint32_t>::AddValue, probe));
     }
+    else if (type == "MsgBeginFinish")
+    {
+        E2ETracer tracer(config);
+        tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::HomaL4Protocol/MsgBegin",
+                                          MakeCallback(TraceHomaMsgBegin));
+        tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::HomaL4Protocol/MsgFinish",
+                                          MakeCallback(TraceHomaMsgFinish));
+    }
 }
 
 E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config) : E2EApplication(config)

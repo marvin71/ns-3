@@ -46,4 +46,51 @@ TraceRx(void func(uint32_t, Ptr<E2EPeriodicSampleProbe<uint32_t>>),
     func(packet->GetSize(), probe);
 }
 
+void
+TraceHomaMsgBegin (Ptr<OutputStreamWrapper> stream,
+                   Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
+                   uint16_t sport, uint16_t dport, int txMsgId)
+{
+  NS_LOG_DEBUG("+ " << Simulator::Now ().GetNanoSeconds ()
+                << " " << msg->GetSize()
+                << " " << saddr << ":" << sport
+                << " "  << daddr << ":" << dport
+                << " " << txMsgId);
+
+  *stream->GetStream () << "+ " << Simulator::Now ().GetNanoSeconds ()
+      << " " << msg->GetSize()
+      << " " << saddr << ":" << sport << " "  << daddr << ":" << dport
+      << " " << txMsgId << std::endl;
+}
+
+void
+TraceHomaMsgFinish (Ptr<OutputStreamWrapper> stream,
+                    Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
+                    uint16_t sport, uint16_t dport, int txMsgId)
+{
+  NS_LOG_DEBUG("- " << Simulator::Now ().GetNanoSeconds ()
+                << " " << msg->GetSize()
+                << " " << saddr << ":" << sport
+                << " "  << daddr << ":" << dport
+                << " " << txMsgId);
+
+  *stream->GetStream () << "- " << Simulator::Now ().GetNanoSeconds ()
+      << " " << msg->GetSize()
+      << " " << saddr << ":" << sport << " "  << daddr << ":" << dport
+      << " " << txMsgId << std::endl;
+}
+
+E2ETracer::E2ETracer(const E2EConfig& config) : E2EProbe(config)
+{
+    if (auto file {config.Find("File")}; file)
+    {
+        m_stream = Create<OutputStreamWrapper>(std::string(file->value), std::ios::out);
+        file->processed = true;
+    }
+    else
+    {
+        NS_ABORT_MSG("probe has no file name");
+    }
+}
+
 } // namespace ns3
