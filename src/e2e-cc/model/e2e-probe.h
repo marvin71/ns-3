@@ -29,6 +29,7 @@
 #include "e2e-component.h"
 
 #include "ns3/application.h"
+#include "ns3/config.h"
 #include "ns3/simulator.h"
 #include "ns3/socket.h"
 #include "ns3/output-stream-wrapper.h"
@@ -226,7 +227,7 @@ inline void
 E2ETracer::AddTraceFunctionConfigPath(const std::string& configPath,
                                       Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb)
 {
-    Config::ConnectWithoutContext(configPath, Callback(cb, m_stream));
+    Config::ConnectWithoutContext(configPath, Callback<R, UArgs...>(cb, m_stream));
 }
 
 } // namespace ns3
