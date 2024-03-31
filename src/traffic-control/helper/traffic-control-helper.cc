@@ -129,6 +129,12 @@ TrafficControlHelper::Default(std::size_t nTxQueues)
 }
 
 uint16_t
+TrafficControlHelper::SetRootQueueDisc(const ObjectFactory& factory)
+{
+    return DoSetRootQueueDisc(factory);
+}
+
+uint16_t
 TrafficControlHelper::DoSetRootQueueDisc(ObjectFactory factory)
 {
     NS_ABORT_MSG_UNLESS(m_queueDiscFactory.empty(),

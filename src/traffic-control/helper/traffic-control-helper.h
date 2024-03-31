@@ -151,6 +151,16 @@ class TrafficControlHelper
     uint16_t SetRootQueueDisc(const std::string& type, Args&&... args);
 
     /**
+     * Helper function used to set a root queue disc using the given ObjectFactory.
+     * To set the InternalQueueList, PacketFilterList and ChildQueueDiscList
+     * attributes, use the AddInternalQueue, AddPacketFilter and AddChildQueueDisc methods.
+     *
+     * \param factory the ObjectFactory of queue disc
+     * \return the handle of the root queue disc (zero)
+     */
+    uint16_t SetRootQueueDisc(const ObjectFactory& factory);
+
+    /**
      * Helper function used to add the given number of internal queues (of the given
      * type and with the given attributes) to the queue disc having the given handle.
      *

@@ -46,6 +46,7 @@ class E2EHost : public E2EComponent
     Ptr<NetDevice> GetNetDevice();
     virtual Ptr<Node> GetNode();
     virtual void AddApplication(Ptr<E2EApplication> application);
+    virtual void PostAdd();
 
   protected:
     Ptr<NetDevice> m_netDevice;
@@ -64,11 +65,14 @@ class E2ESimpleNs3Host : public E2EHost
 
     Ptr<Node> GetNode() override;
     void AddApplication(Ptr<E2EApplication> application) override;
+    void PostAdd() override;
 
   private:
     Ptr<Node> m_node;
     Ptr<SimpleNetDevice> m_outerNetDevice;
     Ptr<SimpleChannel> m_channel;
+    ObjectFactory m_switchQueueDiscFactory;
+    bool m_setSwitchQueueDisc {false};
 
     bool m_enableFlowControl = true;
 
