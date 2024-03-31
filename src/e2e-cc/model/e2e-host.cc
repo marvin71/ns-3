@@ -31,6 +31,7 @@
 #include "ns3/net-device-queue-interface.h"
 #include "ns3/queue.h"
 #include "ns3/simbricks-netdev.h"
+#include "ns3/traffic-control-helper.h"
 
 namespace ns3
 {
@@ -84,6 +85,11 @@ E2EHost::AddApplication(Ptr<E2EApplication> application)
 {
     NS_ABORT_MSG("Applications are not supported for host '" << GetId()
         << "' with type '" << GetType() << "'");
+}
+
+void
+E2EHost::PostAdd()
+{
 }
 
 E2ESimbricksHost::E2ESimbricksHost(const E2EConfig& config) : E2EHost(config)
@@ -198,6 +204,36 @@ E2ESimpleNs3Host::E2ESimpleNs3Host(const E2EConfig& config) : E2EHost(config)
 
     m_node->AddDevice(m_outerNetDevice);
 
+    // Add queue disc to host net device
+    if (auto queueDisc {config.Find("HostQueueDiscType")}; queueDisc)
+    {
+        ObjectFactory queueDiscFactory;
+        queueDiscFactory.SetTypeId(std::string(queueDisc->value));
+        queueDisc->processed = true;
+
+        if (auto it {categories.find("HostQueueDisc")}; it != categories.end())
+        {
+            config.SetFactory(queueDiscFactory, it->second);
+        }
+
+        TrafficControlHelper tch;
+        tch.SetRootQueueDisc(queueDiscFactory);
+        tch.Install(m_outerNetDevice);
+    }
+
+    // Check for queue disc for switch net device, add later
+    if (auto queueDisc {m_config.Find("SwitchQueueDiscType")}; queueDisc)
+    {
+        m_switchQueueDiscFactory.SetTypeId(std::string(queueDisc->value));
+        queueDisc->processed = true;
+        m_setSwitchQueueDisc = true;
+
+        if (auto it {categories.find("SwitchQueueDisc")}; it != categories.end())
+        {
+            config.SetFactory(m_switchQueueDiscFactory, it->second);
+        }
+    }
+
     m_channel = channelFactory.Create<SimpleChannel>();
     netDevice->SetChannel(m_channel);
     m_outerNetDevice->SetChannel(m_channel);
@@ -243,6 +279,18 @@ E2ESimpleNs3Host::AddApplication(Ptr<E2EApplication> application)
 {
     m_node->AddApplication(application->GetApplication());
     AddE2EComponent(application);
+}
+
+void
+E2ESimpleNs3Host::PostAdd()
+{
+    // Add queue disc to switch net device
+    if (m_setSwitchQueueDisc)
+    {
+        TrafficControlHelper tch;
+        tch.SetRootQueueDisc(m_switchQueueDiscFactory);
+        tch.Install(m_netDevice);
+    }
 }
 
 void

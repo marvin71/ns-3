@@ -91,6 +91,8 @@ class E2ESimpleChannel : public E2ETopologyChannel
   private:
     SimpleNetDeviceHelper m_channelHelper;
     NetDeviceContainer m_devices;
+    ObjectFactory m_queueDiscFactory;
+    bool m_setQueueDisc {false};
 };
 
 } // namespace ns3

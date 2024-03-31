@@ -26,6 +26,7 @@
 #include "e2e-topology.h"
 
 #include "ns3/bridge-helper.h"
+#include "ns3/traffic-control-helper.h"
 
 namespace ns3
 {
@@ -89,6 +90,7 @@ E2ESwitchNode::AddHost(Ptr<E2EHost> host)
     m_hostDevices.Add(host->GetNetDevice());
 
     AddE2EComponent(host);
+    host->PostAdd();
 }
 
 void
@@ -185,6 +187,18 @@ E2ESimpleChannel::E2ESimpleChannel(const E2EConfig& config)
     {
         config.Set(MakeBoundCallback(&SetQueue, &m_channelHelper, queueType), it->second);
     }
+    
+    if (auto queueDisc {config.Find("QueueDiscType")}; queueDisc)
+    {
+        m_queueDiscFactory.SetTypeId(std::string(queueDisc->value));
+        queueDisc->processed = true;
+        m_setQueueDisc = true;
+
+        if (auto it {categories.find("QueueDisc")}; it != categories.end())
+        {
+            config.SetFactory(m_queueDiscFactory, it->second);
+        }
+    }
 }
 
 void
@@ -208,6 +222,12 @@ E2ESimpleChannel::Connect(Ptr<E2EComponent> root)
     nodes.Add((*leftNode)->GetNode());
     nodes.Add((*rightNode)->GetNode());
     m_devices = m_channelHelper.Install(nodes);
+    if (m_setQueueDisc)
+    {
+        TrafficControlHelper tch;
+        tch.SetRootQueueDisc(m_queueDiscFactory);
+        tch.Install(m_devices);
+    }
     (*leftNode)->AddChannel(m_devices.Get(0));
     (*rightNode)->AddChannel(m_devices.Get(1));
 }
