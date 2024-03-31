@@ -6,6 +6,7 @@ build_lib(
     model/homa-header.cc
     model/homa-socket.cc
     model/homa-pfifo-queue.cc
+    model/pfifo-homa-queue-disc.cc
     model/msg-generator-app.cc
     model/msg-generator-app-tcp.cc
   HEADER_FILES
@@ -14,6 +15,7 @@ build_lib(
     model/homa-l4-protocol.h
     model/homa-header.h
     model/homa-pfifo-queue.h
+    model/pfifo-homa-queue-disc.h
     model/msg-generator-app.h
     model/msg-generator-app-tcp.h
   LIBRARIES_TO_LINK
