@@ -1145,7 +1145,8 @@ HomaSendScheduler::TxDataPacket ()
   Ptr<Packet> p;
   if (this->GetNextMsgId (nextTxMsgID))
   {   
-    NS_ASSERT(this->GetNextPktOfMsg(nextTxMsgID, p));
+    bool gotNextPkt = this->GetNextPktOfMsg(nextTxMsgID, p);
+    NS_ASSERT(gotNextPkt);
       
     NS_LOG_LOGIC("HomaSendScheduler (" << this <<
                   ") will transmit a packet from msg " << nextTxMsgID);
