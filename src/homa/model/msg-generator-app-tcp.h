@@ -68,6 +68,8 @@ public:
   std::vector<std::tuple<double,int>> GetMsgSizeCDF() const;
   void SetMsgSizeCDF(std::vector<std::tuple<double,int>> cdf);
 
+  void ReadMsgSizeDist();
+
   /*void SetWorkload (double load, 
                     std::map<double,int> msgSizeCDF, 
                     double avgMsgSizePkts);*/
@@ -124,12 +126,16 @@ private:
    * \param socket the connected socket
    */
   void HandlePeerError(Ptr<Socket> socket);
-  
-  uint16_t m_is_homa;
-  Ptr<Socket>       m_socket;        //!< The socket this app uses to Listen
-  std::list<Ptr<Socket>> m_socketList; //!< the accepted sockets
 
-  std::vector<Ptr<Socket>>       m_socket_c;        //!< The socket list this app uses to send/receive msgs
+  void HandleConnectionSucceeded(Ptr<Socket> socket);
+
+  void HandleConnectionFailed(Ptr<Socket> socket);
+
+  
+  Ptr<Socket>       m_socket_listen;        //!< The socket this app uses to Listen
+  std::list<Ptr<Socket>> m_sockets_accepted; //!< The accepted sockets, order doesn't indicate anything
+
+  std::vector<Ptr<Socket>>       m_sockets_send;        //!< The socket list this app uses to send msgs
   TypeId            m_tid;           //!< The type of the socket used
   EventId           m_nextSendEvent; //!< Event id of pending "send msg" event
   
@@ -137,16 +143,16 @@ private:
   uint16_t        m_localPort;       //!< Local port number to bind
   std::vector<InetSocketAddress> m_remoteClients; //!< List of clients that this app can send to
   std::map<double,int> m_msgSizeCDF; //!< The CDF of msg sizes {cum. prob. -> msg size in pkts}
+  std::string     m_msgSizeDistFileName; //!< The file to read message size distribution from
   
   Ptr<ExponentialRandomVariable>  m_interMsgTime; //!< rng for rate of message generation in sec/msg
   Ptr<UniformRandomVariable>      m_msgSizePkts;  //!< rng to choose msg size from the set workload
   Ptr<UniformRandomVariable>      m_remoteClient; //!< rng to choose remote client to send msg to
   
   uint32_t          m_maxPayloadSize;//!< Maximum size of packet payloads
-  uint32_t m_numToConnect;
-  std::vector<uint32_t> m_to_connect_idx;
   uint16_t          m_totMsgCnt;     //!< Total number of messages sent so far
   uint16_t          m_maxMsgs;       //!< Maximum number of messages allowed to be sent
+  size_t num_connected = 0;
 
     /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet>> m_txTrace;

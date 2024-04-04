@@ -285,8 +285,10 @@ E2EMsgGeneratorTCP::E2EMsgGeneratorTCP(const E2EConfig& config) : E2EApplication
     {
         NS_ABORT_MSG("MsgGeneratorTCP application '" << GetId() << "' requires RemoteClients.");
     }
-    if (not config.SetFactoryIfContained<StringValue, std::string>(m_factory,
-        "MsgSizeCDF", "MsgSizeCDF"))
+    if (not (config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+        "MsgSizeCDF", "MsgSizeCDF") or
+        config.SetFactoryIfContained<StringValue, std::string>(m_factory,
+            "MsgSizeDistFileName", "MsgSizeDistFileName")))
     {
         NS_ABORT_MSG("MsgGeneratorTCP application '" << GetId() << "' requires MsgSizeCDF.");
     }
