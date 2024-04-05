@@ -40,10 +40,22 @@
 #include "ns3/trace-source-accessor.h"
 
 #include <algorithm>
-#include <cassert>
 #include <sstream>
 
 namespace ns3 {
+
+// for easier printing of sockets
+std::ostream&
+operator<<(std::ostream& os, Ptr<Socket> socket)
+{
+    Address addr;
+    if (!socket->GetPeerName(addr))
+    {
+        InetSocketAddress iaddr = InetSocketAddress::ConvertFrom(addr);
+        return os << iaddr.GetIpv4() << ":" << iaddr.GetPort();
+    }
+    return os;
+}
 
 NS_LOG_COMPONENT_DEFINE ("MsgGeneratorAppTCP");
 
@@ -280,7 +292,6 @@ void MsgGeneratorAppTCP::StartApplication ()
 
 
   m_socket_listen = Socket::CreateSocket (node, m_tid);
-  m_socket_listen->SetRecvCallback(MakeCallback(&MsgGeneratorAppTCP::ReceiveMessage, this));
   m_socket_listen->SetAcceptCallback(MakeNullCallback<bool, Ptr<Socket>, const Address&>(),
                               MakeCallback(&MsgGeneratorAppTCP::HandleAccept, this));
   m_socket_listen->SetCloseCallbacks(MakeCallback(&MsgGeneratorAppTCP::HandlePeerClose, this),
@@ -288,7 +299,7 @@ void MsgGeneratorAppTCP::StartApplication ()
   NS_LOG_INFO(Simulator::Now ().GetNanoSeconds () << " listen to " << m_localIp << " " << m_localPort);
   m_socket_listen->Bind (InetSocketAddress(m_localIp, m_localPort));
   int status = m_socket_listen->Listen();
-  assert(!status && "m_socket_listen->Listen() failed");
+  NS_ASSERT_MSG(!status, "m_socket_listen->Listen() failed");
 
   m_remoteClients.erase(
     std::remove_if(
@@ -313,14 +324,17 @@ void MsgGeneratorAppTCP::StartApplication ()
       socket = Socket::CreateSocket(node, m_tid);
       socket->SetConnectCallback(MakeCallback(&MsgGeneratorAppTCP::HandleConnectionSucceeded, this),
                                  MakeCallback(&MsgGeneratorAppTCP::HandleConnectionFailed, this));
+      socket->Connect(m_remoteClients[i]);
       m_sockets_send.push_back(socket);
   }
-  m_sockets_send[0]->Connect(m_remoteClients[0]);
+
+  // give TCP sockets the chance to connect
+  Simulator::Schedule(Seconds(1), &MsgGeneratorAppTCP::ScheduleNextMessage, this);
 }
 
 void MsgGeneratorAppTCP::StopApplication ()
 {
-  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << this);
+  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << m_localIp);
 
   CancelNextEvent();
 }
@@ -335,7 +349,7 @@ void MsgGeneratorAppTCP::CancelNextEvent()
 
 void MsgGeneratorAppTCP::ScheduleNextMessage ()
 {
-  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << this);
+  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << m_localIp);
 
   if (Simulator::IsExpired(m_nextSendEvent))
   {
@@ -344,7 +358,7 @@ void MsgGeneratorAppTCP::ScheduleNextMessage ()
   }
   else
   {
-    NS_LOG_WARN("MsgGeneratorAppTCP (" << this <<
+    NS_LOG_WARN("MsgGeneratorAppTCP (" << m_localIp <<
                 ") tries to schedule the next msg before the previous one is sent!");
   }
 }
@@ -368,10 +382,12 @@ uint32_t MsgGeneratorAppTCP::GetNextMsgSizeFromDist ()
   // Homa header can't handle msgs larger than 0xffff pkts
   msgSizePkts = std::min(0xffff, msgSizePkts);
 
-  if (m_maxPayloadSize > 0)
+  if (m_maxPayloadSize > 0) {
     return m_maxPayloadSize * (uint32_t)msgSizePkts;
-  else
+  }
+  else {
     return GetNode ()->GetDevice (0)->GetMtu () * (uint32_t)msgSizePkts;
+  }
 
   // NOTE: If maxPayloadSize is not set, the generated messages will be
   //       slightly larger than the intended number of packets due to
@@ -380,7 +396,7 @@ uint32_t MsgGeneratorAppTCP::GetNextMsgSizeFromDist ()
 
 void MsgGeneratorAppTCP::SendMessage ()
 {
-  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << this);
+  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << m_localIp);
 
   /* Decide which remote client to send to */
   double rndValue = m_remoteClient->GetValue ();
@@ -392,7 +408,7 @@ void MsgGeneratorAppTCP::SendMessage ()
 
   /* Create the message to send */
   Ptr<Packet> msg = Create<Packet> (msgSizeBytes);
-  NS_LOG_LOGIC ("MsgGeneratorAppTCP {" << this << ") generates a message of size: "
+  NS_LOG_LOGIC ("MsgGeneratorAppTCP {" << m_localIp << ") generates a message of size: "
                 << msgSizeBytes << " Bytes.");
 
   int sentBytes = m_sockets_send[remoteClientIdx]->Send(msg);
@@ -420,9 +436,7 @@ void MsgGeneratorAppTCP::ReceiveMessage (Ptr<Socket> socket)
   {
     m_rxTrace(message, from);
     NS_LOG_INFO (Simulator::Now ().GetNanoSeconds () <<
-                 " client received " << message->GetSize () << " bytes from " <<
-                 InetSocketAddress::ConvertFrom (from).GetIpv4 () << ":" <<
-                 InetSocketAddress::ConvertFrom (from).GetPort ());
+                 " client received " << message->GetSize () << " bytes from " << socket);
   }
 }
 
@@ -443,30 +457,24 @@ void
 MsgGeneratorAppTCP::HandleConnectionSucceeded(Ptr<Socket> socket)
 {
     num_connected++;
-    if (num_connected < m_sockets_send.size())
-    {
-        NS_LOG_DEBUG(Simulator::Now().GetNanoSeconds()
-                     << " (" << this << ") Connected to" << socket
-                     << ". Sending next connection request to " << m_remoteClients[num_connected]);
-        m_sockets_send[num_connected]->Connect(m_remoteClients[num_connected]);
-    }
-    else
-    {
-        ScheduleNextMessage();
-    }
+    NS_LOG_DEBUG(Simulator::Now().GetNanoSeconds()
+                 << "ns (" << m_localIp << ") Connection established to " << socket
+                 << ". Currently connected: " << num_connected << " of " << m_sockets_send.size());
 }
 
 void
 MsgGeneratorAppTCP::HandleConnectionFailed(Ptr<Socket> socket)
 {
-    NS_LOG_ERROR("connecting to " << socket << " failed");
-    assert(false);
+    NS_ABORT_MSG_IF(false, "connecting to " << socket << " failed");
 }
 
 void
 MsgGeneratorAppTCP::HandleAccept(Ptr<Socket> s, const Address& from)
 {
-    NS_LOG_DEBUG("Accept socket " << s << " from " << from);
+    NS_LOG_INFO(Simulator::Now().GetNanoSeconds()
+                 << "ns (" << m_localIp << ") Accept "
+                 << InetSocketAddress::ConvertFrom(from).GetIpv4() << ":"
+                 << InetSocketAddress::ConvertFrom(from).GetPort());
     s->SetRecvCallback(MakeCallback(&MsgGeneratorAppTCP::ReceiveMessage, this));
     s->SetCloseCallbacks(MakeCallback(&MsgGeneratorAppTCP::HandlePeerClose, this),
                          MakeCallback(&MsgGeneratorAppTCP::HandlePeerError, this));
