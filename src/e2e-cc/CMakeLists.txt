@@ -29,4 +29,5 @@ build_lib(
                       ${libptp}
                       ${libpoint-to-point}
                       ${libhoma}
+                      ${libinternet-apps}
 )
