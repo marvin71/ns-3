@@ -38,6 +38,7 @@ build_lib(
                       ${libptp}
                       ${libpoint-to-point}
                       ${libhoma}
+                      ${libinternet-apps}
     TEST_SOURCES test/e2e-cc-test-suite.cc
                  ${examples_as_tests_sources}
 )
