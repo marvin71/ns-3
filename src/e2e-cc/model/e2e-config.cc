@@ -361,6 +361,8 @@ E2EConfigParser::ParseArguments(int argc, char* argv[])
         MakeBoundCallback(AddConfig, &m_applications));
     m_cmd.AddValue("Probe", "Add a probe to the simulation",
         MakeBoundCallback(AddConfig, &m_probes));
+    m_cmd.AddValue("GlobalProbe", "Add a global probe to the simulation using config paths",
+        MakeBoundCallback(AddConfig, &m_globalProbes));
     m_cmd.AddValue("Global", "Add global options", MakeBoundCallback(AddConfig, &m_globals));
     m_cmd.AddValue("ConfigFile", "A file that contains command line options", configFile);
     m_cmd.AddValue("Logging", "Enable Logging for specified components",
@@ -475,6 +477,12 @@ const std::vector<E2EConfig>&
 E2EConfigParser::GetProbeArgs()
 {
     return m_probes;
+}
+
+const std::vector<E2EConfig>&
+E2EConfigParser::GetGlobalProbeArgs()
+{
+    return m_globalProbes;
 }
 
 const std::vector<E2EConfig>&

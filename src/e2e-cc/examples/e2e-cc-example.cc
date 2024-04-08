@@ -221,6 +221,22 @@ main(int argc, char* argv[])
         (*component)->AddProbe(config);
     }
 
+    for (auto& config : configParser.GetGlobalProbeArgs())
+    {
+        auto type = config.Find("Type");
+        NS_ABORT_MSG_UNLESS(type, "Global probe does not have a type");
+        type->processed = true;
+
+        if (type->value == "MsgBeginFinish")
+        {
+            E2ETracer tracer(config);
+            tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::HomaL4Protocol/MsgBegin",
+                                            MakeCallback(TraceHomaMsgBegin));
+            tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::HomaL4Protocol/MsgFinish",
+                                            MakeCallback(TraceHomaMsgFinish));
+        }
+    }
+
     Simulator::Run();
     Simulator::Destroy();
     return 0;

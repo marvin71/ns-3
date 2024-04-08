@@ -284,6 +284,7 @@ class E2EConfigParser
     const std::vector<E2EConfig>& GetNetworkArgs();
     const std::vector<E2EConfig>& GetApplicationArgs();
     const std::vector<E2EConfig>& GetProbeArgs();
+    const std::vector<E2EConfig>& GetGlobalProbeArgs();
     const std::vector<E2EConfig>& GetGlobalArgs();
     const std::vector<E2EConfig>& GetLoggingArgs();
 
@@ -299,6 +300,7 @@ class E2EConfigParser
     std::vector<E2EConfig> m_networks;
     std::vector<E2EConfig> m_applications;
     std::vector<E2EConfig> m_probes;
+    std::vector<E2EConfig> m_globalProbes;
     std::vector<E2EConfig> m_globals;
     std::vector<E2EConfig> m_logging;
 };
