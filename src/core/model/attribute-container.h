@@ -329,14 +329,14 @@ AttributeContainerChecker<A, Sep, C>::GetItemChecker() const
 
 } // namespace internal
 
-template <class A, char Sep = ',', template <class...> class C = std::list>
+template <class A, char Sep, template <class...> class C>
 Ptr<AttributeChecker>
 MakeAttributeContainerChecker(const AttributeContainerValue<A, Sep, C>& value)
 {
     return MakeAttributeContainerChecker<A, Sep, C>();
 }
 
-template <class A, char Sep = ',', template <class...> class C = std::list>
+template <class A, char Sep, template <class...> class C>
 Ptr<const AttributeChecker>
 MakeAttributeContainerChecker(Ptr<const AttributeChecker> itemchecker)
 {
@@ -346,7 +346,7 @@ MakeAttributeContainerChecker(Ptr<const AttributeChecker> itemchecker)
     return checker;
 }
 
-template <class A, char Sep = ',', template <class...> class C = std::list>
+template <class A, char Sep, template <class...> class C>
 Ptr<AttributeChecker>
 MakeAttributeContainerChecker()
 {
