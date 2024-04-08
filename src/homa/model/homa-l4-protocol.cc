@@ -369,7 +369,7 @@ HomaL4Protocol::Send (Ptr<Packet> message,
   int txMsgId = m_sendScheduler->ScheduleNewMsg(outMsg);
     
   if (txMsgId >= 0)
-    m_msgBeginTrace(message, saddr, daddr, sport, dport, txMsgId);
+    m_msgBeginTrace(message->GetSize(), saddr, daddr, sport, dport, txMsgId);
 }
 
 /*
@@ -533,7 +533,7 @@ void HomaL4Protocol::ForwardUp (Ptr<Packet> completeMsg,
     (*endPoint)->ForwardUp (completeMsg, header, sport, incomingInterface);
   }
     
-  m_msgFinishTrace(completeMsg, header.GetSource(), header.GetDestination(), 
+  m_msgFinishTrace(completeMsg->GetSize(), header.GetSource(), header.GetDestination(), 
                    sport, dport, (int)txMsgId);
 }
 

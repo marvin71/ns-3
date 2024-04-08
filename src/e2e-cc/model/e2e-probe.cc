@@ -47,35 +47,43 @@ TraceRx(void func(uint32_t, Ptr<E2EPeriodicSampleProbe<uint32_t>>),
 }
 
 void
-TraceHomaMsgBegin (Ptr<OutputStreamWrapper> stream,
-                   Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
-                   uint16_t sport, uint16_t dport, int txMsgId)
+TraceHomaMsgBegin(Ptr<OutputStreamWrapper> stream,
+                  uint32_t size,
+                  const Ipv4Address& saddr,
+                  const Ipv4Address& daddr,
+                  uint16_t sport,
+                  uint16_t dport,
+                  int txMsgId)
 {
   NS_LOG_DEBUG("+ " << Simulator::Now ().GetNanoSeconds ()
-                << " " << msg->GetSize()
+                << " " << size
                 << " " << saddr << ":" << sport
                 << " "  << daddr << ":" << dport
                 << " " << txMsgId);
 
   *stream->GetStream () << "+ " << Simulator::Now ().GetNanoSeconds ()
-      << " " << msg->GetSize()
+      << " " << size
       << " " << saddr << ":" << sport << " "  << daddr << ":" << dport
       << " " << txMsgId << std::endl;
 }
 
 void
-TraceHomaMsgFinish (Ptr<OutputStreamWrapper> stream,
-                    Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
-                    uint16_t sport, uint16_t dport, int txMsgId)
+TraceHomaMsgFinish(Ptr<OutputStreamWrapper> stream,
+                   uint32_t size,
+                   const Ipv4Address& saddr,
+                   const Ipv4Address& daddr,
+                   uint16_t sport,
+                   uint16_t dport,
+                   int txMsgId)
 {
   NS_LOG_DEBUG("- " << Simulator::Now ().GetNanoSeconds ()
-                << " " << msg->GetSize()
+                << " " << size
                 << " " << saddr << ":" << sport
                 << " "  << daddr << ":" << dport
                 << " " << txMsgId);
 
   *stream->GetStream () << "- " << Simulator::Now ().GetNanoSeconds ()
-      << " " << msg->GetSize()
+      << " " << size
       << " " << saddr << ":" << sport << " "  << daddr << ":" << dport
       << " " << txMsgId << std::endl;
 }

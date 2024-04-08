@@ -199,13 +199,21 @@ void ConnectTraceToSocket(Ptr<T> application,
     socket->TraceConnectWithoutContext(trace, MakeBoundCallback(TraceOldNewValue<U>, func, probe));
 }
 
-void TraceHomaMsgBegin (Ptr<OutputStreamWrapper> stream,
-                        Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
-                        uint16_t sport, uint16_t dport, int txMsgId);
+void TraceHomaMsgBegin(Ptr<OutputStreamWrapper> stream,
+                       uint32_t size,
+                       const Ipv4Address& saddr,
+                       const Ipv4Address& daddr,
+                       uint16_t sport,
+                       uint16_t dport,
+                       int txMsgId);
 
-void TraceHomaMsgFinish (Ptr<OutputStreamWrapper> stream,
-                         Ptr<const Packet> msg, Ipv4Address saddr, Ipv4Address daddr,
-                         uint16_t sport, uint16_t dport, int txMsgId);
+void TraceHomaMsgFinish(Ptr<OutputStreamWrapper> stream,
+                        uint32_t size,
+                        const Ipv4Address& saddr,
+                        const Ipv4Address& daddr,
+                        uint16_t sport,
+                        uint16_t dport,
+                        int txMsgId);
 
 class E2ETracer : public E2EProbe
 {
