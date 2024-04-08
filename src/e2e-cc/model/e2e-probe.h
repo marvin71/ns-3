@@ -227,12 +227,7 @@ inline void
 E2ETracer::AddTraceFunctionConfigPath(const std::string& configPath,
                                       Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb)
 {
-    bool connected
-        = Config::ConnectWithoutContextFailSafe(configPath, Callback<R, UArgs...>(cb, m_stream));
-    if (not connected)
-    {
-        NS_LOG_WARN("Could not connect any trace sources for global probe " << GetId());
-    }
+    Config::ConnectWithoutContextFailSafe(configPath, Callback<R, UArgs...>(cb, m_stream));
 }
 
 } // namespace ns3
