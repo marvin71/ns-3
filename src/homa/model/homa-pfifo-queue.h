@@ -187,7 +187,7 @@ HomaPFifoQueue<Item>::Dequeue()
     Ptr<Item> item = nullptr;
 
     int band;
-    for (band = m_bands - 1; band >= 0; band--) {
+    for (band = 0; band < m_bands; band++) {
       if (!m_queues[band].empty()) {
         item = m_queues[band].front();
         m_queues[band].pop_front();
