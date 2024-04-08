@@ -9,6 +9,7 @@ build_lib(
     model/pfifo-homa-queue-disc.cc
     model/msg-generator-app.cc
     model/msg-generator-app-tcp.cc
+    model/msg-generator-tcp-header.cc
   HEADER_FILES
     model/homa-socket-factory.h
     model/homa-socket.h
@@ -18,6 +19,7 @@ build_lib(
     model/pfifo-homa-queue-disc.h
     model/msg-generator-app.h
     model/msg-generator-app-tcp.h
+    model/msg-generator-tcp-header.h
   LIBRARIES_TO_LINK
     ${libcore}
     ${libpoint-to-point}
