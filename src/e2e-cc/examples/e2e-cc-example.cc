@@ -58,7 +58,7 @@ main(int argc, char* argv[])
     LogComponentEnable("E2ETopology", LOG_LEVEL_WARN);
     LogComponentEnable("E2EHost", LOG_LEVEL_WARN);
     LogComponentEnable("E2EApplication", LOG_LEVEL_WARN);
-    LogComponentEnable ("MsgGeneratorAppTCP", LOG_LEVEL_DEBUG);  
+    LogComponentEnable ("MsgGeneratorAppTCP", LOG_LEVEL_DEBUG);
 
     Time::SetResolution (Time::Unit::PS);
 
@@ -200,10 +200,12 @@ main(int argc, char* argv[])
         (*topology)->AddNetwork(device);
     }
 
+    std::vector<std::reference_wrapper<E2EApplication>> applications{};
     auto& applicationConfigs = configParser.GetApplicationArgs();
     for (auto& config : applicationConfigs)
     {
         Ptr<E2EApplication> application = E2EApplication::CreateApplication(config);
+        applications.emplace_back(*application);
         auto host = root->GetE2EComponentParent<E2EHost>(application->GetIdPath());
         NS_ABORT_MSG_UNLESS(host,
             "Host for application '" << application->GetId() << "' not found");
@@ -234,6 +236,20 @@ main(int argc, char* argv[])
                                             MakeCallback(TraceHomaMsgBegin));
             tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::HomaL4Protocol/MsgFinish",
                                             MakeCallback(TraceHomaMsgFinish));
+
+            for (E2EApplication& application : applications)
+            {
+                if (application.GetType() != "MsgGeneratorTCP")
+                {
+                    continue;
+                }
+                tracer.AddTraceFunctionSink(application.GetApplication(),
+                                            "MsgBegin",
+                                            MakeCallback(TraceHomaMsgBegin));
+                tracer.AddTraceFunctionSink(application.GetApplication(),
+                                            "MsgFinish",
+                                            MakeCallback(TraceHomaMsgFinish));
+            }
         }
     }
 

@@ -19,6 +19,7 @@
  */
 
 #include "msg-generator-app-tcp.h"
+#include "msg-generator-tcp-header.h"
 
 #include "ns3/log.h"
 #include "ns3/simulator.h"
@@ -130,7 +131,18 @@ MsgGeneratorAppTCP::GetTypeId (void)
     .AddTraceSource("Rx",
                     "A packet has been received",
                     MakeTraceSourceAccessor(&MsgGeneratorAppTCP::m_rxTrace),
-                    "ns3::Packet::AddressTracedCallback")                    
+                    "ns3::Packet::AddressTracedCallback")
+    // this is to produce traces equivalent to the Homa ones
+    .AddTraceSource ("MsgBegin",
+                  "Trace source indicating a message has been delivered to "
+                  "the HomaL4Protocol by the sender application layer.",
+                  MakeTraceSourceAccessor (&MsgGeneratorAppTCP::m_msgBeginTrace),
+                  "ns3::Packet::TracedCallback")
+    .AddTraceSource ("MsgFinish",
+                     "Trace source indicating a message has been delivered to "
+                     "the receiver application by the HomaL4Protocol layer.",
+                     MakeTraceSourceAccessor (&MsgGeneratorAppTCP::m_msgFinishTrace),
+                     "ns3::Packet::TracedCallback")
   ;
   ;
   return tid;
@@ -326,7 +338,10 @@ void MsgGeneratorAppTCP::StartApplication ()
                                  MakeCallback(&MsgGeneratorAppTCP::HandleConnectionFailed, this));
       socket->Connect(m_remoteClients[i]);
       m_sockets_send.push_back(socket);
+      send_ids.emplace(i, 0);
   }
+  m_sockets_empty_tx_size = m_sockets_send.at(0)->GetTxAvailable();
+  NS_LOG_DEBUG("m_sockets_empty_tx_size=" << m_sockets_empty_tx_size);
 
   // give TCP sockets the chance to connect
   Simulator::Schedule(Seconds(1), &MsgGeneratorAppTCP::ScheduleNextMessage, this);
@@ -394,52 +409,108 @@ uint32_t MsgGeneratorAppTCP::GetNextMsgSizeFromDist ()
   //       the addition of the protocol headers.
 }
 
-void MsgGeneratorAppTCP::SendMessage ()
+void
+MsgGeneratorAppTCP::SendMessage()
 {
-  NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << m_localIp);
+    NS_LOG_FUNCTION(Simulator::Now().GetNanoSeconds() << m_localIp);
 
-  /* Decide which remote client to send to */
-  double rndValue = m_remoteClient->GetValue ();
-  int remoteClientIdx = (int) std::floor(rndValue);
-  Address receiverAddr = m_remoteClients[remoteClientIdx];
+    /* Don't send a new message on a socket that is already sending something.
+    This is bound to fail since the socket then can't accept larger messages. */
+    std::vector<int> empty_sockets{};
+    for (size_t i = 0; i < m_sockets_send.size(); ++i)
+    {
+        if (m_sockets_send.at(i)->GetTxAvailable() < m_sockets_empty_tx_size)
+        {
+            continue;
+        }
+        empty_sockets.emplace_back(i);
+    }
 
-  /* Decide on the message size to send */
-  uint32_t msgSizeBytes = GetNextMsgSizeFromDist ();
+    if (!empty_sockets.empty())
+    {
+        int idx = m_remoteClient->GetInteger(0, empty_sockets.size() - 1);
+        int remoteClientIdx = empty_sockets.at(idx);
+        InetSocketAddress receiverAddr = m_remoteClients.at(remoteClientIdx);
 
-  /* Create the message to send */
-  Ptr<Packet> msg = Create<Packet> (msgSizeBytes);
-  NS_LOG_LOGIC ("MsgGeneratorAppTCP {" << m_localIp << ") generates a message of size: "
-                << msgSizeBytes << " Bytes.");
+        /* Decide on the message size to send */
+        uint32_t msgSizeBytes = GetNextMsgSizeFromDist();
 
-  int sentBytes = m_sockets_send[remoteClientIdx]->Send(msg);
-  NS_LOG_INFO(sentBytes << " Bytes sent to " << receiverAddr);
+        /* Create the message to send */
+        Ptr<Packet> msg = Create<Packet>(msgSizeBytes);
+        NS_LOG_LOGIC("MsgGeneratorAppTCP {" << m_localIp << ") generates a message of size: "
+                                            << msgSizeBytes << " Bytes.");
 
-  if (sentBytes > 0)
-  {
-    m_txTrace(msg);
-    m_totMsgCnt++;
-  }
+        /* add the Homa header for tracing */
+        MsgGeneratorTCPHeader header{};
+        header.f_size = msgSizeBytes;
+        uint16_t& msg_id = send_ids.at(remoteClientIdx);
+        header.f_id = msg_id;
+        msg->AddHeader(header);
 
-  if (m_maxMsgs == 0 || m_totMsgCnt < m_maxMsgs)
-  {
-    ScheduleNextMessage ();
-  }
+        Ptr<Socket> socket = m_sockets_send.at(remoteClientIdx);
+        int sentBytes = socket->Send(msg);
+        int expectedSent = msgSizeBytes + header.GetSerializedSize();
+        NS_ASSERT_MSG(sentBytes == expectedSent,
+                      "only sent " << sentBytes << " out of " << expectedSent << "Bytes");
+
+        msg_id++;
+        m_totMsgCnt++;
+        m_txTrace(msg);
+        m_msgBeginTrace(header.f_size, m_localIp, receiverAddr.GetIpv4(), 0, 0, header.f_id);
+    }
+
+    if (m_maxMsgs == 0 || m_totMsgCnt < m_maxMsgs)
+    {
+        ScheduleNextMessage();
+    }
 }
 
-void MsgGeneratorAppTCP::ReceiveMessage (Ptr<Socket> socket)
+void
+MsgGeneratorAppTCP::ReceiveMessage(Ptr<Socket> socket)
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 
-  Ptr<Packet> message;
-  Address from;
-  while ((message = socket->RecvFrom (from)))
-  {
-    m_rxTrace(message, from);
-    NS_LOG_INFO (Simulator::Now ().GetNanoSeconds () <<
-                 " client received " << message->GetSize () << " bytes from " << socket);
-  }
+    Ptr<Packet> message;
+    Address addr;
+    socket->GetPeerName(addr);
+    InetSocketAddress sender = InetSocketAddress::ConvertFrom(addr);
+    while (true)
+    {
+        MsgGeneratorTCPHeader& header = recv_header.at(sender.GetIpv4().Get());
+        /* receive header if we didn't get one yet*/
+        if (!header.valid)
+        {
+            message = socket->Recv(header.GetSerializedSize(), 0);
+            if (!message)
+            {
+                break;
+            }
+            message->PeekHeader(header);
+            header.valid = true;
+        }
+
+        message = socket->Recv(header.f_size - header.bytes_recvd, 0);
+        if (!message) {
+          break;
+        }
+
+        m_rxTrace(message, addr);
+        NS_LOG_INFO(Simulator::Now().GetNanoSeconds()
+                    << " client received " << message->GetSize() << " bytes from " << socket);
+
+        header.bytes_recvd += message->GetSize();
+
+        /* flow completed, trace completion */
+        if (header.bytes_recvd >= header.f_size) {
+            NS_ASSERT_MSG(header.bytes_recvd == header.f_size,
+                          "bytes_received=" << header.bytes_recvd << " f_size=" << header.f_size);
+            m_msgFinishTrace(header.f_size, sender.GetIpv4(), m_localIp, 0, 0, header.f_id);
+
+            header.valid = false;
+            header.bytes_recvd = 0;
+        }
+    }
 }
-
 
 void
 MsgGeneratorAppTCP::HandlePeerClose(Ptr<Socket> socket)
@@ -471,13 +542,16 @@ MsgGeneratorAppTCP::HandleConnectionFailed(Ptr<Socket> socket)
 void
 MsgGeneratorAppTCP::HandleAccept(Ptr<Socket> s, const Address& from)
 {
-    NS_LOG_INFO(Simulator::Now().GetNanoSeconds()
-                 << "ns (" << m_localIp << ") Accept "
-                 << InetSocketAddress::ConvertFrom(from).GetIpv4() << ":"
-                 << InetSocketAddress::ConvertFrom(from).GetPort());
+    recv_header.emplace(InetSocketAddress::ConvertFrom(from).GetIpv4().Get(),
+                        MsgGeneratorTCPHeader{});
     s->SetRecvCallback(MakeCallback(&MsgGeneratorAppTCP::ReceiveMessage, this));
     s->SetCloseCallbacks(MakeCallback(&MsgGeneratorAppTCP::HandlePeerClose, this),
                          MakeCallback(&MsgGeneratorAppTCP::HandlePeerError, this));
+
+    NS_LOG_INFO(Simulator::Now().GetNanoSeconds()
+                << "ns (" << m_localIp << ") Accept "
+                << InetSocketAddress::ConvertFrom(from).GetIpv4() << ":"
+                << InetSocketAddress::ConvertFrom(from).GetPort());
 }
 
 } // Namespace ns3

@@ -224,6 +224,11 @@ class E2ETracer : public E2EProbe
     void AddTraceFunctionConfigPath(const std::string& configPath,
                                     Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb);
 
+    template <typename R, typename... UArgs>
+    void AddTraceFunctionSink(Ptr<Object> sink,
+                              const std::string& name,
+                              Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb);
+
     void Install(Ptr<Application> application) override {}
 
   private:
@@ -236,6 +241,15 @@ E2ETracer::AddTraceFunctionConfigPath(const std::string& configPath,
                                       Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb)
 {
     Config::ConnectWithoutContextFailSafe(configPath, Callback<R, UArgs...>(cb, m_stream));
+}
+
+template <typename R, typename... UArgs>
+inline void
+E2ETracer::AddTraceFunctionSink(Ptr<Object> sink,
+                                const std::string& name,
+                                Callback<R, Ptr<OutputStreamWrapper>, UArgs...> cb)
+{
+    sink->TraceConnectWithoutContext(name, Callback<R, UArgs...>(cb, m_stream));
 }
 
 } // namespace ns3
