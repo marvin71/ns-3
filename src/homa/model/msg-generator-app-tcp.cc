@@ -352,6 +352,21 @@ void MsgGeneratorAppTCP::StopApplication ()
   NS_LOG_FUNCTION (Simulator::Now ().GetNanoSeconds () << m_localIp);
 
   CancelNextEvent();
+  for (auto socket : m_sockets_send)
+  {
+    socket->Close();
+  }
+  while (!m_sockets_accepted.empty()) // these are accepted sockets, close them
+  {
+    Ptr<Socket> acceptedSocket = m_sockets_accepted.front();
+    m_sockets_accepted.pop_front();
+    acceptedSocket->Close();
+  }
+  if (m_socket_listen)
+  {
+    m_socket_listen->Close();
+    m_socket_listen->SetRecvCallback(MakeNullCallback<void, Ptr<Socket>>());
+  }
 }
 
 void MsgGeneratorAppTCP::CancelNextEvent()
