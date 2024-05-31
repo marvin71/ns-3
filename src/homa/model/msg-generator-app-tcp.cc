@@ -153,7 +153,8 @@ MsgGeneratorAppTCP::MsgGeneratorAppTCP()
     m_interMsgTime (0),
     m_msgSizePkts (0),
     m_remoteClient (0),
-    m_totMsgCnt (0)
+    m_totMsgCnt (0),
+    m_msgId (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -338,10 +339,7 @@ void MsgGeneratorAppTCP::StartApplication ()
                                  MakeCallback(&MsgGeneratorAppTCP::HandleConnectionFailed, this));
       socket->Connect(m_remoteClients[i]);
       m_sockets_send.push_back(socket);
-      send_ids.emplace(i, 0);
   }
-  m_sockets_empty_tx_size = m_sockets_send.at(0)->GetTxAvailable();
-  NS_LOG_DEBUG("m_sockets_empty_tx_size=" << m_sockets_empty_tx_size);
 
   // give TCP sockets the chance to connect
   Simulator::Schedule(Seconds(1), &MsgGeneratorAppTCP::ScheduleNextMessage, this);
@@ -429,26 +427,31 @@ MsgGeneratorAppTCP::SendMessage()
 {
     NS_LOG_FUNCTION(Simulator::Now().GetNanoSeconds() << m_localIp);
 
-    /* Don't send a new message on a socket that is already sending something.
-    This is bound to fail since the socket then can't accept larger messages. */
-    std::vector<int> empty_sockets{};
+    /* Decide on the message size to send */
+    uint32_t msgSizeBytes = GetNextMsgSizeFromDist();
+
+    MsgGeneratorTCPHeader header{};
+
+    // Don't send the next message on a socket that does not have enough capacity
+    // in its buffer to store the messsage. Hopefully only a few sockets do not
+    // have enough capacity. Need to investigate.
+    std::vector<int> availableSockets{};
     for (size_t i = 0; i < m_sockets_send.size(); ++i)
     {
-        if (m_sockets_send.at(i)->GetTxAvailable() < m_sockets_empty_tx_size)
+        if (m_sockets_send[i]->GetTxAvailable() < (msgSizeBytes + header.GetSerializedSize()))
         {
             continue;
         }
-        empty_sockets.emplace_back(i);
+        availableSockets.emplace_back(i);
     }
 
-    if (!empty_sockets.empty())
+    if (not availableSockets.empty())
     {
-        int idx = m_remoteClient->GetInteger(0, empty_sockets.size() - 1);
-        int remoteClientIdx = empty_sockets.at(idx);
-        InetSocketAddress receiverAddr = m_remoteClients.at(remoteClientIdx);
+        int idx = m_remoteClient->GetInteger(0, availableSockets.size() - 1);
+        int remoteClientIdx = availableSockets[idx];
+        InetSocketAddress receiverAddr = m_remoteClients[remoteClientIdx];
 
-        /* Decide on the message size to send */
-        uint32_t msgSizeBytes = GetNextMsgSizeFromDist();
+        
 
         /* Create the message to send */
         Ptr<Packet> msg = Create<Packet>(msgSizeBytes);
@@ -456,19 +459,16 @@ MsgGeneratorAppTCP::SendMessage()
                                             << msgSizeBytes << " Bytes.");
 
         /* add the Homa header for tracing */
-        MsgGeneratorTCPHeader header{};
         header.f_size = msgSizeBytes;
-        uint16_t& msg_id = send_ids.at(remoteClientIdx);
-        header.f_id = msg_id;
+        header.f_id = m_msgId++;
         msg->AddHeader(header);
 
-        Ptr<Socket> socket = m_sockets_send.at(remoteClientIdx);
+        Ptr<Socket> socket = m_sockets_send[remoteClientIdx];
         int sentBytes = socket->Send(msg);
         int expectedSent = msgSizeBytes + header.GetSerializedSize();
         NS_ASSERT_MSG(sentBytes == expectedSent,
                       "only sent " << sentBytes << " out of " << expectedSent << "Bytes");
 
-        msg_id++;
         m_totMsgCnt++;
         m_txTrace(msg);
         m_msgBeginTrace(header.f_size, m_localIp, receiverAddr.GetIpv4(), 0, 0, header.f_id);
@@ -562,6 +562,7 @@ MsgGeneratorAppTCP::HandleAccept(Ptr<Socket> s, const Address& from)
     s->SetRecvCallback(MakeCallback(&MsgGeneratorAppTCP::ReceiveMessage, this));
     s->SetCloseCallbacks(MakeCallback(&MsgGeneratorAppTCP::HandlePeerClose, this),
                          MakeCallback(&MsgGeneratorAppTCP::HandlePeerError, this));
+    m_sockets_accepted.push_back(s);
 
     NS_LOG_INFO(Simulator::Now().GetNanoSeconds()
                 << "ns (" << m_localIp << ") Accept "
