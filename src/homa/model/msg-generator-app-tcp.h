@@ -149,8 +149,6 @@ private:
   std::map<double,int> m_msgSizeCDF; //!< The CDF of msg sizes {cum. prob. -> msg size in pkts}
   std::string     m_msgSizeDistFileName; //!< The file to read message size distribution from
 
-  // map from index of socket for sending to message ID
-  std::unordered_map<size_t, uint16_t> send_ids{};
   // map from IPv4 of sender to application header from first packet of current message
   std::unordered_map<uint32_t, MsgGeneratorTCPHeader> recv_header{};
 
@@ -161,9 +159,8 @@ private:
   uint32_t          m_maxPayloadSize;//!< Maximum size of packet payloads
   uint16_t          m_totMsgCnt;     //!< Total number of messages sent so far
   uint16_t          m_maxMsgs;       //!< Maximum number of messages allowed to be sent
+  uint16_t          m_msgId;         //!< The next message id
   size_t num_connected = 0;
-  // transmit buffer size of empty TCP socket
-  uint32_t m_sockets_empty_tx_size = 0;
 
     /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet>> m_txTrace;
