@@ -346,8 +346,11 @@ void MsgGeneratorAppTCP::StartApplication ()
       m_sockets_send.push_back(socket);
   }
 
-  // give TCP sockets the chance to connect
-  Simulator::Schedule(Seconds(1), &MsgGeneratorAppTCP::ScheduleNextMessage, this);
+  // give TCP sockets the chance to connect and apply an initial delay to prevent synchronous TCP
+  // slow start
+  Ptr<UniformRandomVariable> initialDelayDist = CreateObject<UniformRandomVariable>();
+  uint32_t initialDelay = initialDelayDist->GetInteger(0, 1000);
+  Simulator::Schedule(Seconds(1) + MilliSeconds(initialDelay), &MsgGeneratorAppTCP::ScheduleNextMessage, this);
 }
 
 void MsgGeneratorAppTCP::StopApplication ()
