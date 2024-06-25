@@ -52,6 +52,8 @@ class E2ENetworkSimbricks : public E2ENetwork
 {
   public:
     E2ENetworkSimbricks(const E2EConfig &config);
+
+    void AddProbe(const E2EConfig& config) override;
 };
 
 class E2ENetworkTrunk : public E2EComponent

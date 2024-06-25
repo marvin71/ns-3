@@ -223,7 +223,15 @@ SimpleNetDevice::GetTypeId()
                             "Trace source indicating a packet has been dropped "
                             "by the device during reception",
                             MakeTraceSourceAccessor(&SimpleNetDevice::m_phyRxDropTrace),
-                            "ns3::Packet::TracedCallback");
+                            "ns3::Packet::TracedCallback")
+            .AddTraceSource ("Send",
+                             "Packet is send.",
+                             MakeTraceSourceAccessor (&SimpleNetDevice::m_sendTrace),
+                             "ns3::Packet::TracedCallback")
+            .AddTraceSource ("DropSend",
+                             "Packet is dropped since queue is full.",
+                             MakeTraceSourceAccessor (&SimpleNetDevice::m_dropSend),
+                             "ns3::Packet::TracedCallback");
     return tid;
 }
 
@@ -475,6 +483,10 @@ SimpleNetDevice::SendFrom(Ptr<Packet> p,
         }
         return true;
     }
+    else
+    {
+        m_dropSend(p, to, from, GetNode()->GetId());
+    }
 
     NS_LOG_INFO("simple-netdev: enqueue false");
     return false;
@@ -522,6 +534,8 @@ SimpleNetDevice::FinishTransmission(Ptr<Packet> packet)
     Mac48Address src = tag.GetSrc();
     Mac48Address dst = tag.GetDst();
     uint16_t proto = tag.GetProto();
+
+    m_sendTrace(packet, dst, src);
 
     m_channel->Send(packet, proto, dst, src, this);
 

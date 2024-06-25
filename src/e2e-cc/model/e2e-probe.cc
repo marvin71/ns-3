@@ -26,6 +26,8 @@
 #include "e2e-application.h"
 #include "e2e-probe.h"
 
+#include "ns3/ipv4-header.h"
+
 namespace ns3
 {
 
@@ -86,6 +88,51 @@ TraceHomaMsgFinish(Ptr<OutputStreamWrapper> stream,
       << " " << size
       << " " << saddr << ":" << sport << " "  << daddr << ":" << dport
       << " " << txMsgId << std::endl;
+}
+
+void
+TraceHomaNoSpace(Ptr<OutputStreamWrapper> stream,
+                 uint32_t size,
+                 const Ipv4Address& saddr,
+                 int txMsgId,
+                 int fullCount,
+                 const char* reason)
+{
+    *stream->GetStream() << Simulator::Now().GetNanoSeconds() << " " << size << " " << saddr
+                         << " " << txMsgId << " " << fullCount << " " << reason << std::endl;
+}
+
+void
+TraceSimpleNetDeviceSend(int index,
+                         Ptr<OutputStreamWrapper> stream,
+                         Ptr<const Packet> p,
+                         const Mac48Address& to,
+                         const Mac48Address& from)
+{
+    *stream->GetStream() << index << " " << Simulator::Now().GetNanoSeconds()
+                         << " " << p->GetSize() << std::endl;
+}
+
+void
+TraceSimpleNetDeviceDrop(int index,
+                         Ptr<OutputStreamWrapper> stream,
+                         Ptr<const Packet> p,
+                         const Mac48Address& to,
+                         const Mac48Address& from,
+                         int nodeId)
+{
+    Ipv4Header header;
+    if (p->PeekHeader(header))
+    {
+        *stream->GetStream() << nodeId << " " << Simulator::Now().GetNanoSeconds() << " "
+                             << header.GetDestination() << " " << header.GetSource() << " "
+                             << to << std::endl;
+    }
+    else
+    {
+        *stream->GetStream() << nodeId << " " << Simulator::Now().GetNanoSeconds()
+                             << " could not parse ipv4 header" << std::endl;
+    }
 }
 
 E2ETracer::E2ETracer(const E2EConfig& config) : E2EProbe(config)

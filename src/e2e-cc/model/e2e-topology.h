@@ -88,6 +88,8 @@ class E2ESimpleChannel : public E2ETopologyChannel
 
     void Connect(Ptr<E2EComponent> root) override;
 
+    void AddProbe(const E2EConfig& config) override;
+
   private:
     SimpleNetDeviceHelper m_channelHelper;
     NetDeviceContainer m_devices;

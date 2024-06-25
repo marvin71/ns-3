@@ -232,4 +232,32 @@ E2ESimpleChannel::Connect(Ptr<E2EComponent> root)
     (*rightNode)->AddChannel(m_devices.Get(1));
 }
 
+void
+E2ESimpleChannel::AddProbe(const E2EConfig& config)
+{
+    std::string_view type;
+    if (auto t {config.Find("Type")}; t)
+    {
+        type = (*t).value;
+        (*t).processed = true;
+    }
+    else
+    {
+        NS_ABORT_MSG("Probe does not have a type");
+    }
+
+    if (type == "NetDeviceSend")
+    {
+        E2ETracer tracer(config);
+        tracer.AddTraceFunctionSink(m_devices.Get(0), "Send", MakeBoundCallback(TraceSimpleNetDeviceSend, 0));
+        tracer.AddTraceFunctionSink(m_devices.Get(1), "Send", MakeBoundCallback(TraceSimpleNetDeviceSend, 1));
+    }
+    else if (type == "NetDeviceDrop")
+    {
+        E2ETracer tracer(config);
+        tracer.AddTraceFunctionSink(m_devices.Get(0), "DropSend", MakeBoundCallback(TraceSimpleNetDeviceDrop, 0));
+        tracer.AddTraceFunctionSink(m_devices.Get(1), "DropSend", MakeBoundCallback(TraceSimpleNetDeviceDrop, 1));
+    }
+}
+
 } // namespace ns3

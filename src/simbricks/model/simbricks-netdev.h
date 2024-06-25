@@ -28,6 +28,7 @@
 
 #include "ns3/net-device.h"
 #include "ns3/nstime.h"
+#include "ns3/traced-callback.h"
 #include "simbricks-base.h"
 
 namespace ns3 {
@@ -110,6 +111,7 @@ private:
   bool m_a_listen;
   bool m_a_reschedule_sync;
 
+  TracedCallback<Ptr<const Packet>, const Mac48Address&, const Mac48Address&> m_sendTrace;
 
   uint16_t m_mtu;
   uint32_t m_ifIndex;

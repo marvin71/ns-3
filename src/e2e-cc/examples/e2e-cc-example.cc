@@ -251,6 +251,18 @@ main(int argc, char* argv[])
                                             MakeCallback(TraceHomaMsgFinish));
             }
         }
+        else if (type->value == "HomaNoSpace")
+        {
+            E2ETracer tracer(config);
+            tracer.AddTraceFunctionConfigPath("/NodeList/*/$ns3::MsgGeneratorAppTCP/NoSpace",
+                                              MakeCallback(TraceHomaNoSpace));
+        }
+        else if (type->value == "NetDeviceDrop")
+        {
+            E2ETracer tracer(config);
+            tracer.AddTraceFunctionConfigPath("/NodeList/*/DeviceList/*/$ns3::SimpleNetDevice/DropSend",
+                                              MakeBoundCallback(TraceSimpleNetDeviceDrop, 0));
+        }
     }
 
     Simulator::Run();

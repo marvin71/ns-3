@@ -173,6 +173,8 @@ private:
   TracedCallback<uint32_t, const Ipv4Address&, const Ipv4Address&, uint16_t, uint16_t, int>
       m_msgFinishTrace;
 
+  TracedCallback<uint32_t, const Ipv4Address&, int, int, const char*> m_noSpace;
+
   double m_avgMsgSizePkts;
   double m_load;
 };

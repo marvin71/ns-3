@@ -165,6 +165,9 @@ class SimpleNetDevice : public NetDevice
      */
     TracedCallback<Ptr<const Packet>> m_phyRxDropTrace;
 
+    TracedCallback<Ptr<const Packet>, const Mac48Address&, const Mac48Address&> m_sendTrace;
+    TracedCallback<Ptr<const Packet>, const Mac48Address&, const Mac48Address&, int> m_dropSend;
+
     /**
      * The StartTransmission method is used internally to start the process
      * of sending a packet out on the channel, by scheduling the

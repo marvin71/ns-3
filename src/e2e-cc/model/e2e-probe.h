@@ -215,6 +215,26 @@ void TraceHomaMsgFinish(Ptr<OutputStreamWrapper> stream,
                         uint16_t dport,
                         int txMsgId);
 
+void TraceHomaNoSpace(Ptr<OutputStreamWrapper> stream,
+                      uint32_t size,
+                      const Ipv4Address& saddr,
+                      int txMsgId,
+                      int fullCount,
+                      const char* reason);
+
+void TraceSimpleNetDeviceSend(int index,
+                              Ptr<OutputStreamWrapper> stream,
+                              Ptr<const Packet> p,
+                              const Mac48Address& to,
+                              const Mac48Address& from);
+
+void TraceSimpleNetDeviceDrop(int index,
+                              Ptr<OutputStreamWrapper> stream,
+                              Ptr<const Packet> p,
+                              const Mac48Address& to,
+                              const Mac48Address& from,
+                              int nodeId);
+
 class E2ETracer : public E2EProbe
 {
   public:

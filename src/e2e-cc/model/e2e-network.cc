@@ -24,6 +24,7 @@
  */
 
 #include "e2e-network.h"
+#include "e2e-probe.h"
 
 #include "ns3/integer.h"
 #include "ns3/simbricks-netdev.h"
@@ -85,6 +86,27 @@ E2ENetworkSimbricks::E2ENetworkSimbricks(const E2EConfig& config) : E2ENetwork(c
     netDevice->Start();
 
     m_netDevice = netDevice;
+}
+
+void
+E2ENetworkSimbricks::AddProbe(const E2EConfig& config)
+{
+    std::string_view type;
+    if (auto t {config.Find("Type")}; t)
+    {
+        type = (*t).value;
+        (*t).processed = true;
+    }
+    else
+    {
+        NS_ABORT_MSG("Probe does not have a type");
+    }
+
+    if (type == "NetDeviceSend")
+    {
+        E2ETracer tracer(config);
+        tracer.AddTraceFunctionSink(m_netDevice, "Send", MakeBoundCallback(TraceSimpleNetDeviceSend, 0));
+    }
 }
 
 E2ENetworkTrunk::E2ENetworkTrunk(const E2EConfig& config) : E2EComponent(config)
