@@ -495,13 +495,35 @@ MsgGeneratorAppTCP::ReceiveMessage(Ptr<Socket> socket)
         /* receive header if we didn't get one yet*/
         if (!header.valid)
         {
-            message = socket->Recv(header.GetSerializedSize(), 0);
+            Ptr<Packet>& pp = partial_headers[sender.GetIpv4().Get()];
+            int ppSize = 0;
+            if (pp)
+            {
+              ppSize = pp->GetSize();
+            }
+            message = socket->Recv(header.GetSerializedSize() - ppSize, 0);
             if (!message)
             {
                 break;
             }
+            if (pp)
+            {
+                pp->AddAtEnd(message);
+                message = pp;
+            }
+            if (message->GetSize() < header.GetSerializedSize())
+            {
+                if (not pp)
+                {
+                    pp = message;
+                }
+                break;
+            }
+            NS_ASSERT_MSG(message->GetSize() == header.GetSerializedSize(),
+                          "message should exactly contain header");
             message->PeekHeader(header);
             header.valid = true;
+            pp = nullptr;
         }
 
         message = socket->Recv(header.f_size - header.bytes_recvd, 0);
@@ -559,6 +581,8 @@ MsgGeneratorAppTCP::HandleAccept(Ptr<Socket> s, const Address& from)
 {
     recv_header.emplace(InetSocketAddress::ConvertFrom(from).GetIpv4().Get(),
                         MsgGeneratorTCPHeader{});
+    partial_headers.emplace(InetSocketAddress::ConvertFrom(from).GetIpv4().Get(),
+                            nullptr);
     s->SetRecvCallback(MakeCallback(&MsgGeneratorAppTCP::ReceiveMessage, this));
     s->SetCloseCallbacks(MakeCallback(&MsgGeneratorAppTCP::HandlePeerClose, this),
                          MakeCallback(&MsgGeneratorAppTCP::HandlePeerError, this));
