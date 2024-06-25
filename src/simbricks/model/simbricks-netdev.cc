@@ -94,6 +94,10 @@ TypeId SimbricksNetDevice::GetTypeId ()
                    MakeBooleanAccessor (
                       &SimbricksNetDevice::m_a_reschedule_sync),
                    MakeBooleanChecker ())
+    .AddTraceSource ("Send",
+                     "Packet is send.",
+                     MakeTraceSourceAccessor (&SimbricksNetDevice::m_sendTrace),
+                     "ns3::Packet::TracedCallback")
     ;
     return tid;
 }
@@ -248,10 +252,15 @@ bool SimbricksNetDevice::SendFrom (Ptr<Packet> packet, const Address& source, co
       return false;
   }
 
+  Mac48Address src = Mac48Address::ConvertFrom (source);
+  Mac48Address dst = Mac48Address::ConvertFrom (dest);
+
   EthernetHeader header (false);
-  header.SetSource (Mac48Address::ConvertFrom (source));
-  header.SetDestination (Mac48Address::ConvertFrom (dest));
+  header.SetSource (src);
+  header.SetDestination (dst);
   header.SetLengthType (protocolNumber);
+
+  m_sendTrace(packet, dst, src);
 
   packet->AddHeader (header);
 

@@ -143,6 +143,11 @@ MsgGeneratorAppTCP::GetTypeId (void)
                      "the receiver application by the HomaL4Protocol layer.",
                      MakeTraceSourceAccessor (&MsgGeneratorAppTCP::m_msgFinishTrace),
                      "ns3::Packet::TracedCallback")
+    .AddTraceSource ("NoSpace",
+                     "New message could not be scheduled since it does not fit into any"
+                     "of the tcp socket send buffers.",
+                     MakeTraceSourceAccessor (&MsgGeneratorAppTCP::m_noSpace),
+                     "ns3::Packet::TracedCallback")
   ;
   ;
   return tid;
@@ -447,6 +452,11 @@ MsgGeneratorAppTCP::SendMessage()
 
     if (not availableSockets.empty())
     {
+      if (availableSockets.size() != m_sockets_send.size())
+        {
+          m_noSpace(msgSizeBytes, m_localIp, m_msgId,
+                    m_sockets_send.size() - availableSockets.size(), "some sockets full");
+        }
         int idx = m_remoteClient->GetInteger(0, availableSockets.size() - 1);
         int remoteClientIdx = availableSockets[idx];
         InetSocketAddress receiverAddr = m_remoteClients[remoteClientIdx];
@@ -472,6 +482,10 @@ MsgGeneratorAppTCP::SendMessage()
         m_totMsgCnt++;
         m_txTrace(msg);
         m_msgBeginTrace(header.f_size, m_localIp, receiverAddr.GetIpv4(), 0, 0, header.f_id);
+    }
+    else
+    {
+      m_noSpace(msgSizeBytes, m_localIp, m_msgId, 0, "no space left");
     }
 
     if (m_maxMsgs == 0 || m_totMsgCnt < m_maxMsgs)
