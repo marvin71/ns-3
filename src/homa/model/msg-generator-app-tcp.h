@@ -151,6 +151,7 @@ private:
 
   // map from IPv4 of sender to application header from first packet of current message
   std::unordered_map<uint32_t, MsgGeneratorTCPHeader> recv_header{};
+  std::unordered_map<uint32_t, Ptr<Packet>> partial_headers;
 
   Ptr<ExponentialRandomVariable>  m_interMsgTime; //!< rng for rate of message generation in sec/msg
   Ptr<UniformRandomVariable>      m_msgSizePkts;  //!< rng to choose msg size from the set workload
