@@ -46,9 +46,10 @@ extern "C" {
 NS_LOG_COMPONENT_DEFINE ("SimbricksNetDevice");
 
 /**
- * \brief SimpleNetDevice tag to store source, destination and protocol of each packet.
+ * \brief SimbricksNetDevice tag to store source, destination and protocol of each packet.
+ * Copied from SimpleNetDevice.
  */
-class SimpleTag : public Tag
+class SimbricksTag : public Tag
 {
   public:
     /**
@@ -103,32 +104,32 @@ class SimpleTag : public Tag
     uint16_t m_protocolNumber; //!< protocol number
 };
 
-NS_OBJECT_ENSURE_REGISTERED(SimpleTag);
+NS_OBJECT_ENSURE_REGISTERED(SimbricksTag);
 
 TypeId
-SimpleTag::GetTypeId()
+SimbricksTag::GetTypeId()
 {
-    static TypeId tid = TypeId("ns3::SimpleTag")
+    static TypeId tid = TypeId("ns3::SimbricksTag")
                             .SetParent<Tag>()
                             .SetGroupName("Network")
-                            .AddConstructor<SimpleTag>();
+                            .AddConstructor<SimbricksTag>();
     return tid;
 }
 
 TypeId
-SimpleTag::GetInstanceTypeId() const
+SimbricksTag::GetInstanceTypeId() const
 {
     return GetTypeId();
 }
 
 uint32_t
-SimpleTag::GetSerializedSize() const
+SimbricksTag::GetSerializedSize() const
 {
     return 8 + 8 + 2;
 }
 
 void
-SimpleTag::Serialize(TagBuffer i) const
+SimbricksTag::Serialize(TagBuffer i) const
 {
     uint8_t mac[6];
     m_src.CopyTo(mac);
@@ -139,7 +140,7 @@ SimpleTag::Serialize(TagBuffer i) const
 }
 
 void
-SimpleTag::Deserialize(TagBuffer i)
+SimbricksTag::Deserialize(TagBuffer i)
 {
     uint8_t mac[6];
     i.Read(mac, 6);
@@ -150,43 +151,43 @@ SimpleTag::Deserialize(TagBuffer i)
 }
 
 void
-SimpleTag::SetSrc(Mac48Address src)
+SimbricksTag::SetSrc(Mac48Address src)
 {
     m_src = src;
 }
 
 Mac48Address
-SimpleTag::GetSrc() const
+SimbricksTag::GetSrc() const
 {
     return m_src;
 }
 
 void
-SimpleTag::SetDst(Mac48Address dst)
+SimbricksTag::SetDst(Mac48Address dst)
 {
     m_dst = dst;
 }
 
 Mac48Address
-SimpleTag::GetDst() const
+SimbricksTag::GetDst() const
 {
     return m_dst;
 }
 
 void
-SimpleTag::SetProto(uint16_t proto)
+SimbricksTag::SetProto(uint16_t proto)
 {
     m_protocolNumber = proto;
 }
 
 uint16_t
-SimpleTag::GetProto() const
+SimbricksTag::GetProto() const
 {
     return m_protocolNumber;
 }
 
 void
-SimpleTag::Print(std::ostream& os) const
+SimbricksTag::Print(std::ostream& os) const
 {
     os << "src=" << m_src << " dst=" << m_dst << " proto=" << m_protocolNumber;
 }
@@ -437,7 +438,7 @@ bool SimbricksNetDevice::SendFrom (Ptr<Packet> packet, const Address& source, co
   Mac48Address from = Mac48Address::ConvertFrom (source);
   Mac48Address to = Mac48Address::ConvertFrom (dest);
 
-  SimpleTag tag;
+  SimbricksTag tag;
   tag.SetSrc(from);
   tag.SetDst(to);
   tag.SetProto(protocolNumber);
@@ -499,7 +500,7 @@ SimbricksNetDevice::FinishTransmission(Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION(this);
 
-  SimpleTag tag;
+  SimbricksTag tag;
   packet->RemovePacketTag(tag);
 
   Mac48Address src = tag.GetSrc();
