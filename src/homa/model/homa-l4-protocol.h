@@ -144,6 +144,12 @@ public:
    * \return Number of priority bands dedicated for unscheduled packets
    */
   uint8_t GetNumUnschedPrioBands (void) const;
+
+  /**
+   * \brief Get number of priority levels dedicated to scheduled packets in the network
+   * \return Number of priority bands dedicated for scheduled packets
+   */
+  uint8_t GetNumSchedPrioBands (void) const;
   
   /**
    * \brief Get the configured number of messages to grant at the same time
@@ -472,9 +478,10 @@ public:
   /**
    * \brief Generates a busy packet to the receiver of the this message
    * \param targetTxMsgId The txMsgId of this message (determined by the HomaSendScheduler)
+   * \param messagePrio The priority of this message
    * \return The generated BUSY packet
    */
-  Ptr<Packet> GenerateBusy (uint16_t targetTxMsgId);
+  Ptr<Packet> GenerateBusy (uint16_t targetTxMsgId, uint8_t messagePrio);
   
   /**
    * \brief Determines whether there exists some data packets to retransmit
@@ -732,16 +739,18 @@ public:
    * \brief Generate a GRANT or an ACK packet with the most recent state of this message
    * \param grantedPrio The priority to grant DATA packets with
    * \param pktTypeFlag The type of the packet (Grant or ACK)
+   * \param messagePrio The priority of this control packet
    * \return The generated GRANT or ACK packet
    */
-  Ptr<Packet> GenerateGrantOrAck(uint8_t grantedPrio, uint8_t pktTypeFlag);
+  Ptr<Packet> GenerateGrantOrAck(uint8_t grantedPrio, uint8_t pktTypeFlag, uint8_t messagePrio);
   
   /**
    * \brief Generate a list of RESEND packets to send upon retransmission timeout
    * \param maxRsndPktOffset The highest packet index to decide RESENDs upto
+   * \param messagePrio The priority of the resend packets
    * \return The list of RESEND packets
    */
-  std::list<Ptr<Packet>> GenerateResends (uint16_t maxRsndPktOffset);
+  std::list<Ptr<Packet>> GenerateResends (uint16_t maxRsndPktOffset, uint8_t messagePrio);
 
 private:
   Ipv4Header m_ipv4Header;    //!< The IPv4 Header of the first packet arrived for this message
