@@ -208,7 +208,13 @@ HomaL4Protocol::GetNumUnschedPrioBands (void) const
 {
   return m_numUnschedPrioBands;
 }
-    
+
+uint8_t
+HomaL4Protocol::GetNumSchedPrioBands(void) const
+{
+    return m_numTotalPrioBands - m_numUnschedPrioBands;
+}
+
 uint8_t
 HomaL4Protocol::GetOvercommitLevel (void) const
 {
@@ -732,9 +738,9 @@ uint8_t HomaOutboundMsg::GetPrio (uint16_t pktOffset)
   {
 //     if (this->GetMsgSizePkts () < m_homa->GetBdp ())
     if (this->GetMsgSizePkts () < 13) // Based on heuristics
-        return 0;
+        return m_homa->GetNumTotalPrioBands() - 1;
     else
-      return m_homa->GetNumUnschedPrioBands () - 1;
+      return m_homa->GetNumSchedPrioBands();
     // TODO: Determine priority of unscheduled packet (index = pktOffset)
     //       according to the distribution of message sizes.
   }
@@ -874,7 +880,7 @@ void HomaOutboundMsg::HandleAck (HomaHeader const &homaHeader)
   m_remainingBytes = 0;
 }
     
-Ptr<Packet> HomaOutboundMsg::GenerateBusy (uint16_t targetTxMsgId)
+Ptr<Packet> HomaOutboundMsg::GenerateBusy (uint16_t targetTxMsgId, uint8_t messagePrio)
 {
   NS_LOG_FUNCTION (this << targetTxMsgId);
     
@@ -899,7 +905,7 @@ Ptr<Packet> HomaOutboundMsg::GenerateBusy (uint16_t targetTxMsgId)
   busyPacket->AddHeader (homaHeader);
     
   SocketIpTosTag ipTosTag;
-  ipTosTag.SetTos (0); // Busy packets have the highest priority
+  ipTosTag.SetTos (messagePrio); // Busy packets have the highest priority
   // This packet may already have a SocketIpTosTag (see HomaSocket)
   busyPacket->ReplacePacketTag (ipTosTag);
     
@@ -1221,7 +1227,7 @@ void HomaSendScheduler::CtrlPktRecvdForOutboundMsg(Ipv4Header const &ipv4Header,
       NS_LOG_LOGIC("HomaSendScheduler (" << this 
                    << ") needs to send a BUSY packet for " << targetTxMsgId);
       
-      m_homa->SendDown(targetMsg->GenerateBusy (nextTxMsgID), 
+      m_homa->SendDown(targetMsg->GenerateBusy (nextTxMsgID, m_homa->GetNumTotalPrioBands() - 1), 
                        targetMsg->GetSrcAddress (), 
                        targetMsg->GetDstAddress (), 
                        targetMsg->GetRoute ());
@@ -1503,7 +1509,8 @@ Ptr<Packet> HomaInboundMsg::GetReassembledMsg ()
 }
     
 Ptr<Packet> HomaInboundMsg::GenerateGrantOrAck(uint8_t grantedPrio,
-                                               uint8_t pktTypeFlag)
+                                               uint8_t pktTypeFlag,
+                                               uint8_t messagePrio)
 {
   NS_LOG_FUNCTION (this << grantedPrio);
   NS_ASSERT(this->IsGrantable());
@@ -1539,7 +1546,7 @@ Ptr<Packet> HomaInboundMsg::GenerateGrantOrAck(uint8_t grantedPrio,
   p->AddHeader (homaHeader);
     
   SocketIpTosTag ipTosTag;
-  ipTosTag.SetTos (0); // Grant packets have the highest priority
+  ipTosTag.SetTos (messagePrio); // Grant packets have the highest priority
   // This packet may already have a SocketIpTosTag (see HomaSocket)
   p->ReplacePacketTag (ipTosTag);
     
@@ -1548,7 +1555,8 @@ Ptr<Packet> HomaInboundMsg::GenerateGrantOrAck(uint8_t grantedPrio,
   return p;
 }
     
-std::list<Ptr<Packet>> HomaInboundMsg::GenerateResends (uint16_t maxRsndPktOffset)
+std::list<Ptr<Packet>> HomaInboundMsg::GenerateResends (uint16_t maxRsndPktOffset,
+                                                        uint8_t messagePrio)
 {
   NS_LOG_FUNCTION (this << maxRsndPktOffset);
     
@@ -1576,7 +1584,7 @@ std::list<Ptr<Packet>> HomaInboundMsg::GenerateResends (uint16_t maxRsndPktOffse
       p->AddHeader (homaHeader);
     
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (0); // Resend packets have the highest priority
+      ipTosTag.SetTos (messagePrio); // Resend packets have the highest priority
       // This packet may already have a SocketIpTosTag (see HomaSocket)
       p->ReplacePacketTag (ipTosTag);
         
@@ -1749,8 +1757,9 @@ void HomaRecvScheduler::ForwardUp(Ptr<HomaInboundMsg> inboundMsg, int msgIdx)
                      inboundMsg->GetTxMsgId(),
                      inboundMsg->GetIpv4Interface());
         
-  m_homa->SendDown(inboundMsg->GenerateGrantOrAck(m_homa->GetNumUnschedPrioBands(), 
-                                                  HomaHeader::Flags_t::ACK),
+  m_homa->SendDown(inboundMsg->GenerateGrantOrAck(m_homa->GetNumSchedPrioBands() - 1, 
+                                                  HomaHeader::Flags_t::ACK,
+                                                  m_homa->GetNumTotalPrioBands() - 1),
                    inboundMsg->GetDstAddress (),
                    inboundMsg->GetSrcAddress ());
     
@@ -1796,7 +1805,7 @@ void HomaRecvScheduler::SendAppropriateGrants()
   NS_LOG_FUNCTION (this);
     
   std::unordered_set<uint32_t> grantedSenders; // Same sender can't be granted for multiple msgs at once
-  uint8_t grantingPrio = m_homa->GetNumUnschedPrioBands (); // Scheduled priorities start here
+  uint8_t grantingPrio = m_homa->GetNumSchedPrioBands () - 1; // Scheduled priorities start here
   uint8_t overcommitDue = m_homa->GetOvercommitLevel ();
     
   Ptr<HomaInboundMsg> currentMsg;
@@ -1807,7 +1816,7 @@ void HomaRecvScheduler::SendAppropriateGrants()
 
     if (overcommitDue > 0)
     {  
-      grantingPrio = std::min(grantingPrio, (uint8_t)(m_homa->GetNumTotalPrioBands()-1));
+      grantingPrio = std::max(grantingPrio, (uint8_t)(0));
       
       
       Ipv4Address senderAddress = currentMsg->GetSrcAddress ();
@@ -1819,7 +1828,8 @@ void HomaRecvScheduler::SendAppropriateGrants()
           if (currentMsg->IsGrantable ())
           {
             m_homa->SendDown(currentMsg->GenerateGrantOrAck(grantingPrio, 
-                                                            HomaHeader::Flags_t::GRANT),
+                                                            HomaHeader::Flags_t::GRANT,
+                                                            m_homa->GetNumTotalPrioBands() - 1),
                             currentMsg->GetDstAddress (),
                             senderAddress); 
             currentMsg->SetCurrentlyScheduled(true);
@@ -1829,7 +1839,7 @@ void HomaRecvScheduler::SendAppropriateGrants()
           
         }
         overcommitDue--;
-        grantingPrio++;
+        grantingPrio--;
       }
     }
   }
@@ -1869,7 +1879,8 @@ void HomaRecvScheduler::ExpireRtxTimeout(Ptr<HomaInboundMsg> inboundMsg,
                    " Rtx Timer for an inbound Msg (" << inboundMsg << 
                    ") expired, which is scheduled. RESEND packets will be sent");
         
-      std::list<Ptr<Packet>> rsndPkts = inboundMsg->GenerateResends (maxRsndPktOffset);
+      std::list<Ptr<Packet>> rsndPkts = inboundMsg->GenerateResends (maxRsndPktOffset,
+                                                              m_homa->GetNumTotalPrioBands() - 1);
       while (!rsndPkts.empty())
       {
         m_homa->SendDown(rsndPkts.front(),
